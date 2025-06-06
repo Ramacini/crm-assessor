@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM do Assessor - O CRM Mais Completo para Assessores de Investimentos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        .gradient-bg { background: linear-gradient(135deg, #1f2937 0%, #000000 50%, #374151 100%); }
+        .gold-gradient { background: linear-gradient(135deg, #fbbf24, #f59e0b); }
+        .gold-text { background: linear-gradient(135deg, #fbbf24, #f59e0b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hover-glow:hover { box-shadow: 0 0 20px rgba(251, 191, 36, 0.3); }
+        .hidden { display: none; }
+        .icon { width: 20px; height: 20px; display: inline-block; }
+    </style>
+</head>
+<body class="gradient-bg text-white">
+
+<!-- Landing Page -->
+<div id="landing" class="min-h-screen">
+    <!-- Header -->
+    <header class="bg-black/80 backdrop-blur-md border-b border-gray-800 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-3">
+                    <div class="gold-gradient p-2 rounded-lg">
+                        <span class="text-black font-bold">📈</span>
+                    </div>
+                    <span class="text-xl font-bold gold-text">CRM do Assessor</span>
+                </div>
+                <nav class="hidden md:flex items-center space-x-8">
+                    <span class="text-gray-300 hover:text-yellow-400 transition cursor-pointer">Recursos</span>
+                    <span class="text-gray-300 hover:text-yellow-400 transition cursor-pointer">Preços</span>
+                    <span class="text-gray-300 hover:text-yellow-400 transition cursor-pointer">Depoimentos</span>
+                    <button onclick="showDemo()" class="text-gray-300 hover:text-yellow-400 transition">Demo</button>
+                </nav>
+                <div class="flex items-center space-x-4">
+                    <button onclick="showLogin()" class="text-gray-300 hover:text-yellow-400 transition">Entrar</button>
+                    <button onclick="showSignup()" class="gold-gradient text-black px-6 py-2 rounded-lg hover-glow transition-all duration-300 font-semibold">Começar Agora</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative py-20 overflow-hidden">
+        <div class="absolute inset-0 bg-gradient-to-r from-yellow-400/10 to-yellow-600/10"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+            <div class="text-center max-w-4xl mx-auto">
+                <div class="inline-flex items-center bg-yellow-400/10 text-yellow-400 px-4 py-2 rounded-full text-sm font-medium mb-6 border border-yellow-400/20">
+                    <span class="mr-2">⚡</span>
+                    OFERTA ESPECIAL: 50% OFF + Preço mais baixo do Brasil!
+                </div>
+                <h1 class="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
+                    O CRM que 
+                    <span class="gold-text">multiplica</span> seus resultados
+                    <br>
+                    <span class="text-2xl md:text-3xl text-yellow-400">por apenas R$ 39,90/mês</span>
+                </h1>
+                <p class="text-xl text-gray-300 mb-8 max-w-3xl mx-auto leading-relaxed">
+                    Transforme sua operação como assessor de investimentos. Gerencie clientes, automatize follow-ups e 
+                    <strong class="text-yellow-400">aumente seu AUM em até 300%</strong> com o CRM mais completo do mercado.
+                    <br>
+                    <span class="text-yellow-400 font-semibold">⚡ Oferta especial: 50% OFF apenas até o final do mês!</span>
+                </p>
+                <div class="flex flex-col sm:flex-row items-center justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+                    <button onclick="showSignup()" class="gold-gradient text-black px-8 py-4 rounded-lg text-lg font-semibold hover-glow transition-all duration-300 flex items-center">
+                        Começar Agora
+                        <span class="ml-2">→</span>
+                    </button>
+                    <button onclick="showDemo()" class="border-2 border-gray-600 text-gray-300 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-800 hover:border-yellow-400 hover:text-yellow-400 transition flex items-center">
+                        <span class="mr-2">▶</span>
+                        Ver Demonstração
+                    </button>
+                </div>
+                <p class="text-sm text-gray-400 mt-4">✓ Preço mais baixo do Brasil • ✓ Cancelamento a qualquer momento • ✓ Suporte incluído</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="py-16 bg-gray-900/50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div class="text-center">
+                    <div class="text-3xl md:text-4xl font-bold text-yellow-400 mb-2">8,500+</div>
+                    <div class="text-gray-300">Assessores Ativos</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl md:text-4xl font-bold text-yellow-400 mb-2">R$ 3.2B+</div>
+                    <div class="text-gray-300">AUM Gerenciado</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl md:text-4xl font-bold text-yellow-400 mb-2">300%</div>
+                    <div class="text-gray-300">Aumento Médio AUM</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl md:text-4xl font-bold text-yellow-400 mb-2">R$ 39,90</div>
+                    <div class="text-gray-300">Preço Mais Baixo do Brasil</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing Section -->
+    <section class="py-20 bg-gray-900">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold text-white mb-4">Planos que se adaptam ao seu crescimento</h2>
+                <p class="text-xl text-gray-300 mb-6">Escolha o plano ideal para seu perfil e comece a escalar seus resultados hoje mesmo</p>
+                
+                <!-- Countdown Timer -->
+                <div class="bg-yellow-400/10 border border-yellow-400/20 rounded-lg p-4 max-w-md mx-auto mb-8">
+                    <p class="text-yellow-400 font-semibold mb-2">⏰ Oferta especial termina em:</p>
+                    <div class="flex justify-center space-x-4 text-white">
+                        <div class="text-center">
+                            <div class="bg-yellow-400 text-black w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg">7</div>
+                            <p class="text-xs text-gray-300 mt-1">DIAS</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="bg-yellow-400 text-black w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg">23</div>
+                            <p class="text-xs text-gray-300 mt-1">HORAS</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="bg-yellow-400 text-black w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg">45</div>
+                            <p class="text-xs text-gray-300 mt-1">MIN</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="bg-yellow-400 text-black w-12 h-12 rounded-lg flex items-center justify-center font-bold text-lg">12</div>
+                            <p class="text-xs text-gray-300 mt-1">SEG</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Starter Plan -->
+                <div class="bg-black rounded-2xl shadow-xl border border-gray-800">
+                    <div class="p-8">
+                        <h3 class="text-2xl font-bold text-white mb-2">Starter</h3>
+                        <p class="text-gray-300 mb-6">Perfeito para assessores iniciantes</p>
+                        <div class="mb-6">
+                            <div class="flex items-baseline mb-2">
+                                <span class="text-4xl font-bold text-yellow-400">R$ 39,90</span>
+                                <span class="text-gray-400 ml-2">/mês</span>
+                            </div>
+                            <div class="text-sm text-gray-500 line-through mb-1">De R$ 79,90</div>
+                            <div class="bg-yellow-400/10 border border-yellow-400/20 rounded-lg p-2 mb-2">
+                                <p class="text-yellow-400 text-sm font-medium">💰 Anual: R$ 29,90/mês</p>
+                                <p class="text-xs text-yellow-300">Economize R$ 120,00 por ano!</p>
+                            </div>
+                        </div>
+                        <ul class="space-y-3 mb-8">
+                            <li class="flex items-center"><span class="text-yellow-400 mr-3">✓</span><span class="text-gray-300">Até 100 clientes</span></li>
+                            <li class="flex items-center"><span class="text-yellow-400 mr-3">✓</span><span class="text-gray-300">Dashboard básico</span></li>
+                            <li class="flex items-center"><span class="text-yellow-400 mr-3">✓</span><span class="text-gray-300">Gestão de atividades</span></li>
+                            <li class="flex items-center"><span class="text-yellow-400 mr-3">✓</span><span class="text-gray-300">App mobile</span></li>
+                        </ul>
+                        <button onclick="selectPlan('starter')" class="w-full py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700">
+                            Assinar Agora
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Professional Plan -->
+                <div class="bg-black rounded-2xl shadow-xl border border-yellow-400 ring-2 ring-yellow-400 scale-105 relative">
+                    <div class="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                        <span class="gold-gradient text-black px-6 py-2 rounded-full text-sm font-medium">Mais Popular</span>
+                    </div>
+                    <div class="p-8">
+                        <h3 class="text-2xl font-bold text-white mb-2">Professional</h3>
+                        <p class="text-gray-300 mb-6">Para assessores em crescimento</p>
+                        <div class="mb-6">
+                            <div class="flex items-baseline mb-2">
+                                <span class="text-4xl font-bold text-yellow-400">R$ 79,90</span>
+                                <span class="text-gray-400 ml-2">/mês</span>
+                            </div>
+                            <div class="text-sm text-gray-500 line-through mb-1">De R$ 159,90</div>
+                            <div class="bg-yellow-400/10 border border-yellow-400/20 rounded-lg p-2 mb-2">
+                                <p class="text-yellow-400 text-sm font-medium">💰 Anual: R$ 59,90/mês</p>
+                                <p class="text-xs text-yellow-300">Economize R$ 240,00 por ano!</p>
+                            </div>
+                        </div>
+                        <ul class="space-y-3 mb-8">
+                            <li class="flex items-center"><span class="text-yellow-400 mr-3">✓</span><span class="text-gray-300">Até 500 clientes</span></li>
+                            <li class="flex items-center"><span class="text-yellow-400 mr-3">✓</span><span class="text-gray-300">Dashboard avançado com IA</span></li>
+                            <li class="flex items-center"><span class="text-yellow-400 mr-3">✓</span><span class="text-gray-300">WhatsApp Business API</span></li>
+                            <li class="flex items-center"><span class="text-yellow-400 mr-3">✓</span><span class="text-gray-300">Automações inteligentes</span></li>
+                            <li class="flex items-center"><span class="text-yellow-400 mr-3">✓</span><span class="text-gray-300">Até 3 usuários</span></li>
+                        </ul>
+                        <button onclick="selectPlan('professional')" class="w-full py-3 px-6 rounded-lg font-semibold transition-all duration-300 gold-gradient text-black hover-glow">
+                            Assinar Agora
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Enterprise Plan -->
+                <div class="bg-black rounded-2xl shadow-xl border border-gray-800">
+                    <div class="p-8">
+                        <h3 class="text-2xl font-bold text-white mb-2">Enterprise</h3>
+                        <p class="text-gray-300 mb-6">Para empresas e grandes assessores</p>
+                        <div class="mb-6">
+                            <div class="flex items-baseline mb-2">
+                                <span class="text-4xl font-bold text-yellow-400">R$ 149,90</span>
+                                <span class="text-gray-400 ml-2">/mês</span>
+                            </div>
+                            <div class="text-sm text-gray-500 line-through mb-1">De R$ 299,90</div>
+                            <div class="bg-yellow-400/10 border border-yellow-400/20 rounded-lg p-2 mb-2">
+                                <p class="text-yellow-400 text-sm font-medium">💰 Anual: R$ 99,90/mês</p>
+                                <p class="text-xs text-yellow-300">Economize R$ 600,00 por ano!</p>
+                            </div>
+                        </div>
+                        <ul class="space-y-3 mb-8">
+                            <li class="flex items-center"><span class="text-yellow-400 mr-3">✓</span><span class="text-gray-300">Clientes ilimitados</span></li>
+                            <li class="flex items-center"><span class="text-yellow-400 mr-3">✓</span><span class="text-gray-300">IA para recomendações</span></li>
+                            <li class="flex items-center"><span class="text-yellow-400 mr-3">✓</span><span class="text-gray-300">White label completo</span></li>
+                            <li class="flex items-center"><span class="text-yellow-400 mr-3">✓</span><span class="text-gray-300">Suporte 24/7 dedicado</span></li>
+                            <li class="flex items-center"><span class="text-yellow-400 mr-3">✓</span><span class="text-gray-300">Usuários ilimitados</span></li>
+                        </ul>
+                        <button onclick="selectPlan('enterprise')" class="w-full py-3 px-6 rounded-lg font-semibold transition-all duration-300 bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-700">
+                            Assinar Agora
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="py-20 bg-gradient-to-r from-gray-900 to-black">
+        <div class="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
+            <div class="mb-6">
+                <span class="bg-yellow-400 text-black px-4 py-2 rounded-full text-sm font-bold">⚡ ÚLTIMOS DIAS DA OFERTA ESPECIAL</span>
+            </div>
+            <h2 class="text-4xl font-bold text-white mb-6">Pronto para multiplicar seus resultados?</h2>
+            <p class="text-xl text-gray-300 mb-4">Junte-se a mais de 8.500 assessores que já transformaram sua operação</p>
+            <p class="text-yellow-400 font-semibold mb-8">50% de desconto • A partir de R$ 39,90/mês • Oferta válida apenas até 31/06</p>
+            <button onclick="showSignup()" class="gold-gradient text-black px-8 py-4 rounded-lg text-lg font-semibold hover-glow transition-all duration-300">
+                Aproveitar Oferta Especial Agora
+            </button>
+            <p class="text-gray-300 text-sm mt-4">Cobrança imediata • Cancelamento a qualquer momento • Preço mais baixo do Brasil</p>
+        </div>
+    </section>
+</div>
+
+<!-- Signup Page -->
+<div id="signup" class="hidden min-h-screen gradient-bg flex items-center justify-center p-4">
+    <div class="max-w-md w-full">
+        <div class="bg-gray-900 rounded-2xl shadow-2xl p-8 border border-gray-800">
+            <div class="text-center mb-8">
+                <div class="gold-gradient p-3 rounded-xl w-fit mx-auto mb-4">
+                    <span class="text-black text-2xl">📈</span>
+                </div>
+                <h1 class="text-2xl font-bold text-white mb-2">Criar Conta</h1>
+                <p class="text-gray-300">Comece a transformar seus resultados hoje</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Nome Completo</label>
+                    <input type="text" class="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent" placeholder="Seu nome completo">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                    <input type="email" class="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent" placeholder="seu@email.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Telefone</label>
+                    <input type="tel" class="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent" placeholder="(11) 99999-9999">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Empresa</label>
+                    <input type="text" class="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent" placeholder="Nome da sua empresa">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Senha</label>
+                    <input type="password" class="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent" placeholder="Mínimo 6 caracteres">
+                </div>
+
+                <button onclick="alert('Em breve! Por enquanto, entre em contato pelo WhatsApp: (11) 99999-9999')" class="w-full gold-gradient text-black py-3 rounded-lg font-semibold hover-glow transition-all duration-300">
+                    Assinar Agora
+                </button>
+            </div>
+
+            <div class="text-center mt-6">
+                <p class="text-sm text-gray-300">
+                    Já tem uma conta? 
+                    <button onclick="showLogin()" class="text-yellow-400 hover:underline ml-1">Fazer login</button>
+                </p>
+            </div>
+        </div>
+
+        <div class="text-center mt-6">
+            <button onclick="showLanding()" class="text-gray-400 hover:text-gray-300 flex items-center mx-auto">
+                ← Voltar para página inicial
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Login Page -->
+<div id="login" class="hidden min-h-screen gradient-bg flex items-center justify-center p-4">
+    <div class="max-w-md w-full">
+        <div class="bg-gray-900 rounded-2xl shadow-2xl p-8 border border-gray-800">
+            <div class="text-center mb-8">
+                <div class="gold-gradient p-3 rounded-xl w-fit mx-auto mb-4">
+                    <span class="text-black text-2xl">📈</span>
+                </div>
+                <h1 class="text-2xl font-bold text-white mb-2">Bem-vindo de volta</h1>
+                <p class="text-gray-300">Faça login na sua conta</p>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Email</label>
+                    <input type="email" class="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent" placeholder="seu@email.com">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Senha</label>
+                    <input type="password" class="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:border-transparent" placeholder="Sua senha">
+                </div>
+
+                <button onclick="showDashboard()" class="w-full gold-gradient text-black py-3 rounded-lg font-semibold hover-glow transition-all duration-300">
+                    Entrar
+                </button>
+            </div>
+
+            <div class="text-center mt-6">
+                <p class="text-sm text-gray-300">
+                    Não tem uma conta? 
+                    <button onclick="showSignup()" class="text-yellow-400 hover:underline ml-1">Criar conta</button>
+                </p>
+            </div>
+        </div>
+
+        <div class="text-center mt-6">
+            <button onclick="showLanding()" class="text-gray-400 hover:text-gray-300 flex items-center mx-auto">
+                ← Voltar para página inicial
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Dashboard Demo -->
+<div id="dashboard" class="hidden min-h-screen bg-black">
+    <header class="bg-gray-900 shadow-lg border-b border-gray-800">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <div class="flex items-center space-x-4">
+                    <span class="text-2xl">📈</span>
+                    <h1 class="text-xl font-bold text-white">CRM do Assessor</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <button class="p-2 text-gray-400 hover:text-yellow-400">🔔</button>
+                    <div class="h-8 w-8 gold-gradient rounded-full flex items-center justify-center">
+                        <span class="text-black text-sm">👤</span>
+                    </div>
+                    <button onclick="showLanding()" class="text-gray-400 hover:text-yellow-400 text-sm">Sair</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="p-6">
+        <div class="space-y-6">
+            <!-- KPIs -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-400">Total de Clientes</p>
+                            <p class="text-2xl font-bold text-white">23</p>
+                        </div>
+                        <span class="text-yellow-400 text-2xl">👥</span>
+                    </div>
+                </div>
+                
+                <div class="bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-400">Prospects Ativos</p>
+                            <p class="text-2xl font-bold text-white">12</p>
+                        </div>
+                        <span class="text-yellow-400 text-2xl">🎯</span>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-400">AUM Total</p>
+                            <p class="text-2xl font-bold text-white">R$ 2.8M</p>
+                        </div>
+                        <span class="text-yellow-400 text-2xl">💰</span>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-800">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-400">Taxa Conversão</p>
+                            <p class="text-2xl font-bold text-white">67%</p>
+                        </div>
+                        <span class="text-yellow-400 text-2xl">📈</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pipeline -->
+            <div class="bg-gray-900 p-6 rounded-lg shadow-lg border border-gray-800">
+                <h3 class="text-lg font-semibold mb-4 text-white">Pipeline de Vendas</h3>
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div class="bg-black p-4 rounded-lg border border-gray-800">
+                        <h4 class="font-medium text-yellow-400 mb-2">Prospecção</h4>
+                        <div class="space-y-2">
+                            <div class="bg-gray-800 p-3 rounded border border-gray-700">
+                                <p class="text-sm font-medium text-white">Ana Silva</p>
+                                <p class="text-xs text-gray-400">R$ 150.000</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-black p-4 rounded-lg border border-gray-800">
+                        <h4 class="font-medium text-yellow-400 mb-2">Qualificação</h4>
+                        <div class="space-y-2">
+                            <div class="bg-gray-800 p-3 rounded border border-gray-700">
+                                <p class="text-sm font-medium text-white">João Santos</p>
+                                <p class="text-xs text-gray-400">R$ 300.000</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-black p-4 rounded-lg border border-gray-800">
+                        <h4 class="font-medium text-yellow-400 mb-2">Proposta</h4>
+                        <div class="space-y-2">
+                            <div class="bg-gray-800 p-3 rounded border border-gray-700">
+                                <p class="text-sm font-medium text-white">Maria Costa</p>
+                                <p class="text-xs text-gray-400">R$ 500.000</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-black p-4 rounded-lg border border-gray-800">
+                        <h4 class="font-medium text-yellow-400 mb-2">Fechado</h4>
+                        <div class="space-y-2">
+                            <div class="bg-gray-800 p-3 rounded border border-gray-700">
+                                <p class="text-sm font-medium text-white">Carlos Lima</p>
+                                <p class="text-xs text-gray-400">R$ 800.000</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clientes Recentes -->
+            <div class="bg-gray-900 rounded-lg shadow-lg border border-gray-800">
+                <div class="p-4 border-b border-gray-800">
+                    <h3 class="text-lg font-semibold text-white">Clientes Recentes</h3>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-black">
+                            <tr>
+                                <th class="text-left p-4 text-sm font-medium text-gray-400">Cliente</th>
+                                <th class="text-left p-4 text-sm font-medium text-gray-400">Status</th>
+                                <th class="text-left p-4 text-sm font-medium text-gray-400">AUM</th>
+                                <th class="text-left p-4 text-sm font-medium text-gray-400">Perfil</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr class="border-b border-gray-800 hover:bg-gray-800/50">
+                                <td class="p-4">
+                                    <div>
+                                        <p class="font-medium text-white">Roberto Silva</p>
+                                        <p class="text-sm text-gray-400">roberto@email.com</p>
+                                    </div>
+                                </td>
+                                <td class="p-4">
+                                    <span class="px-2 py-1 text-xs rounded-full bg-yellow-400/20 text-yellow-400 border border-yellow-400/30">Cliente</span>
+                                </td>
+                                <td class="p-4 text-sm text-gray-300">R$ 450.000</td>
+                                <td class="p-4 text-sm text-gray-300">Moderado</td>
+                            </tr>
+                            <tr class="border-b border-gray-800 hover:bg-gray-800/50">
+                                <td class="p-4">
+                                    <div>
+                                        <p class="font-medium text-white">Patricia Santos</p>
+                                        <p class="text-sm text-gray-400">patricia@email.com</p>
+                                    </div>
+                                </td>
+                                <td class="p-4">
+                                    <span class="px-2 py-1 text-xs rounded-full bg-gray-700 text-gray-300 border border-gray-600">Prospect</span>
+                                </td>
+                                <td class="p-4 text-sm text-gray-300">R$ 200.000</td>
+                                <td class="p-4 text-sm text-gray-300">Conservador</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Demo Modal -->
+<div id="demoModal" class="hidden fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center p-4 z-50">
+    <div class="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-6xl h-5/6 flex flex-col">
+        <div class="flex justify-between items-center p-6 border-b border-gray-800">
+            <h3 class="text-xl font-bold text-white">Demonstração - CRM do Assessor</h3>
+            <button onclick="closeDemo()" class="text-gray-400 hover:text-gray-300 text-2xl">×</button>
+        </div>
+        <div class="flex-1 overflow-auto p-6 bg-black">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold text-white mb-4">🚀 Demonstração Completa do CRM</h2>
+                <p class="text-gray-300 text-lg">Veja como o CRM do Assessor vai transformar sua operação!</p>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-gray-900 p-6 rounded-lg border border-gray-800">
+                    <h3 class="text-xl font-bold text-yellow-400 mb-4">📊 Dashboard Inteligente</h3>
+                    <ul class="space-y-2 text-gray-300">
+                        <li>• KPIs em tempo real do seu AUM</li>
+                        <li>• Gráficos de performance da carteira</li>
+                        <li>• Alertas de oportunidades automáticos</li>
+                        <li>• Ranking de top clientes</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-gray-900 p-6 rounded-lg border border-gray-800">
+                    <h3 class="text-xl font-bold text-yellow-400 mb-4">👥 Gestão de Clientes</h3>
+                    <ul class="space-y-2 text-gray-300">
+                        <li>• Perfil de risco completo</li>
+                        <li>• Histórico de investimentos</li>
+                        <li>• Suitability automático</li>
+                        <li>• Timeline de interações</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-gray-900 p-6 rounded-lg border border-gray-800">
+                    <h3 class="text-xl font-bold text-yellow-400 mb-4">📱 WhatsApp Integrado</h3>
+                    <ul class="space-y-2 text-gray-300">
+                        <li>• Mensagens automáticas</li>
+                        <li>• Templates pré-aprovados</li>
+                        <li>• Campanhas segmentadas</li>
+                        <li>• Follow-ups programados</li>
+                    </ul>
+                </div>
+                
+                <div class="bg-gray-900 p-6 rounded-lg border border-gray-800">
+                    <h3 class="text-xl font-bold text-yellow-400 mb-4">🤖 IA para Vendas</h3>
+                    <ul class="space-y-2 text-gray-300">
+                        <li>• Recomendações inteligentes</li>
+                        <li>• Análise de comportamento</li>
+                        <li>• Previsão de churn</li>
+                        <li>• Score de propensão</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="text-center mt-8">
+                <button onclick="closeDemo(); showSignup();" class="gold-gradient text-black px-8 py-4 rounded-lg text-lg font-semibold hover-glow transition-all duration-300">
+                    Quero Começar Agora!
+                </button>
+                <p class="text-gray-400 text-sm mt-4">Mais de 8.500 assessores já transformaram seus resultados!</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Navigation functions
+function showLanding() {
+    document.getElementById('landing').classList.remove('hidden');
+    document.getElementById('signup').classList.add('hidden');
+    document.getElementById('login').classList.add('hidden');
+    document.getElementById('dashboard').classList.add('hidden');
+}
+
+function showSignup() {
+    document.getElementById('landing').classList.add('hidden');
+    document.getElementById('signup').classList.remove('hidden');
+    document.getElementById('login').classList.add('hidden');
+    document.getElementById('dashboard').classList.add('hidden');
+}
+
+function showLogin() {
+    document.getElementById('landing').classList.add('hidden');
+    document.getElementById('signup').classList.add('hidden');
+    document.getElementById('login').classList.remove('hidden');
+    document.getElementById('dashboard').classList.add('hidden');
+}
+
+function showDashboard() {
+    document.getElementById('landing').classList.add('hidden');
+    document.getElementById('signup').classList.add('hidden');
+    document.getElementById('login').classList.add('hidden');
+    document.getElementById('dashboard').classList.remove('hidden');
+}
+
+function showDemo() {
+    document.getElementById('demoModal').classList.remove('hidden');
+}
+
+function closeDemo() {
+    document.getElementById('demoModal').classList.add('hidden');
+}
+
+function selectPlan(plan) {
+    alert(`Plano ${plan} selecionado! Entre em contato pelo WhatsApp: (11) 99999-9999 para finalizar sua assinatura.`);
+}
+
+// Countdown timer animation
+function updateCountdown() {
+    const days = document.querySelector('.countdown-days');
+    const hours = document.querySelector('.countdown-hours');
+    const minutes = document.querySelector('.countdown-minutes');
+    const seconds = document.querySelector('.countdown-seconds');
+    
+    // Simple animation (you can make this more sophisticated)
+    setInterval(() => {
+        const secondsElement = document.querySelector('[class*="countdown"] .bg-yellow-400:last-child');
+        if (secondsElement) {
+            let currentSeconds = parseInt(secondsElement.textContent);
+            currentSeconds = currentSeconds > 0 ? currentSeconds - 1 : 59;
+            secondsElement.textContent = currentSeconds.toString().padStart(2, '0');
+        }
+    }, 1000);
+}
+
+// Initialize countdown on page load
+document.addEventListener('DOMContentLoaded', updateCountdown);
+
+// Smooth scrolling for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        document.querySelector(this.getAttribute('href')).scrollIntoView({
+            behavior: 'smooth'
+        });
+    });
+});
+</script>
+
+</body>
+</html>
