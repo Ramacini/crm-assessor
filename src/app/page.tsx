@@ -33,7 +33,7 @@ export default function Home() {
         fetchClients() // Recarregar dados
       }
     } catch (err) {
-      alert('Erro ao mover cliente: ' + err.message)
+      alert('Erro ao cadastrar: ' + String(err))
     }
   }
   
@@ -302,7 +302,7 @@ export default function Home() {
         fetchActivities()
       }
     } catch (err) {
-      alert('Erro ao completar atividade: ' + err.message)
+      alert('Erro ao cadastrar: ' + String(err))
     }
   }
 
