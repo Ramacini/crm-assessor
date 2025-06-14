@@ -146,7 +146,7 @@ export default function Home() {
         setCurrentPage('dashboard')
       }
     } catch (err) {
-      alert('Erro ao cadastrar: ' + err.message)
+      alert('Erro ao cadastrar: ' + String(err))
     }
   }
 
