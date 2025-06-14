@@ -75,7 +75,7 @@ export default function Home() {
     aum_value: '',
     risk_profile: '',
     status: 'Prospect',
-    pipeline_stage: 'Prospect'
+    pipeline_stage: 'Qualificação'
   })
 
   const [activityData, setActivityData] = useState({
@@ -198,7 +198,7 @@ export default function Home() {
         .order('created_at', { ascending: false })
       
       if (error) {
-        console.error('Erro ao buscar clientes:', error)
+        console.error('Erro ao buscar prospects:', error)
       } else {
         setClients(data || [])
       }
@@ -264,9 +264,9 @@ export default function Home() {
         
         if (error) {
           console.error('DEBUG - Erro no update:', error)
-          alert('Erro ao atualizar cliente: ' + error.message)
+          alert('Erro ao atualizar prospect: ' + error.message)
         } else {
-          alert('Cliente atualizado com sucesso!')
+          alert('Prospect atualizado com sucesso!')
           setShowClientForm(false)
           setEditingClient(null)
           resetClientForm()
@@ -293,10 +293,10 @@ export default function Home() {
         
         if (error) {
           console.error('DEBUG - Erro no insert:', error)
-          alert('Erro ao cadastrar cliente: ' + error.message)
+          alert('Erro ao cadastrar prospect: ' + error.message)
         } else {
           console.log('DEBUG - Cliente inserido com sucesso!')
-          alert('Cliente cadastrado com sucesso!')
+          alert('Prospect cadastrado com sucesso!')
           setShowClientForm(false)
           resetClientForm()
           fetchClients()
@@ -304,7 +304,7 @@ export default function Home() {
       }
     } catch (err) {
       console.log('DEBUG - Erro catch:', err)
-      alert('Erro ao salvar cliente: ' + String(err))
+      alert('Erro ao salvar prospect: ' + String(err))
     }
   }
 
@@ -334,9 +334,9 @@ export default function Home() {
         .eq('user_id', user.id)
       
       if (error) {
-        alert('Erro ao deletar cliente: ' + error.message)
+        alert('Erro ao deletar prospect: ' + error.message)
       } else {
-        alert('Cliente deletado com sucesso!')
+        alert('Prospect deletado com sucesso!')
         fetchClients()
         setShowDeleteConfirm(false)
         setDeletingClient(null)
@@ -409,7 +409,7 @@ export default function Home() {
         .eq('user_id', user.id)
       
       if (error) {
-        alert('Erro ao mover cliente: ' + error.message)
+        alert('Erro ao mover prospect: ' + error.message)
       } else {
         fetchClients()
       }
@@ -428,7 +428,7 @@ export default function Home() {
       aum_value: '',
       risk_profile: '',
       status: 'Prospect',
-      pipeline_stage: 'Prospect'
+      pipeline_stage: 'Qualificação'
     })
   }
 
@@ -466,18 +466,18 @@ export default function Home() {
   const plans: Plan[] = [
     {
       name: "Starter",
-      price: "R$ 39",
+      price: "R$ 37",
       features: ["Até 100 clientes", "Relatórios básicos", "Suporte por email"]
     },
     {
       name: "Professional",
-      price: "R$ 79",
-      features: ["Até 500 clientes", "Relatórios avançados", "Suporte prioritário", "Integrações"],
+      price: "R$ 27",
+      features: ["Até 500 clientes", "Relatórios avançados", "Suporte prioritário", "Integrações", "Plano anual"],
       highlight: true
     },
     {
       name: "Enterprise",
-      price: "R$ 149",
+      price: "R$ 197",
       features: ["Clientes ilimitados", "Relatórios customizados", "Suporte 24/7", "API completa"]
     }
   ]
@@ -539,9 +539,7 @@ export default function Home() {
                   <button onClick={() => setCurrentPage('signup')} className="gold-gradient text-black px-8 py-4 rounded-lg text-lg font-semibold hover-glow transition-all duration-300">
                     Começar Agora
                   </button>
-                  <button onClick={() => setShowDemo(true)} className="border border-yellow-400 text-yellow-400 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-yellow-400 hover:text-black transition-all duration-300">
-                    Ver Demonstração
-                  </button>
+
                 </div>
               </div>
 
@@ -564,7 +562,7 @@ export default function Home() {
               </div>
 
               <div className="text-center mb-16">
-                <h2 className="text-3xl font-bold mb-8">Mais de <span className="gold-text">8.500+ assessores</span> já confiam em nossa plataforma</h2>
+                <h2 className="text-3xl font-bold mb-8">Mais de <span className="gold-text">1.500+ assessores</span> já confiam em nossa plataforma</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                   <div className="text-center">
                     <div className="text-2xl font-bold gold-text">98%</div>
@@ -741,7 +739,7 @@ export default function Home() {
                     onClick={() => setShowClientForm(true)}
                     className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold hover-glow transition-all duration-300"
                   >
-                    + Novo Cliente
+                    + Novo Prospect
                   </button>
                   <button onClick={handleSignOut} className="text-gray-400 hover:text-yellow-400 text-sm transition">Sair</button>
                 </div>
@@ -767,7 +765,7 @@ export default function Home() {
                 onClick={() => setActiveTab('clients')}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition ${activeTab === 'clients' ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:text-white'}`}
               >
-                👥 Clientes
+                👥 Prospects
               </button>
               <button 
                 onClick={() => setActiveTab('activities')}
@@ -775,13 +773,37 @@ export default function Home() {
               >
                 📋 Atividades
               </button>
+              <button 
+                onClick={() => setActiveTab('consorcio')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition ${activeTab === 'consorcio' ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:text-white'}`}
+              >
+                🏠 Consórcio
+              </button>
+              <button 
+                onClick={() => setActiveTab('seguros')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition ${activeTab === 'seguros' ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:text-white'}`}
+              >
+                🛡️ Seguros
+              </button>
+              <button 
+                onClick={() => setActiveTab('cambio')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition ${activeTab === 'cambio' ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:text-white'}`}
+              >
+                💱 Câmbio
+              </button>
+              <button 
+                onClick={() => setActiveTab('eventos')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition ${activeTab === 'eventos' ? 'bg-yellow-400 text-black' : 'text-gray-300 hover:text-white'}`}
+              >
+                🎯 Eventos
+              </button>
             </div>
 
             {activeTab === 'overview' && (
               <div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                   <div className="bg-gray-900 p-6 rounded-lg border border-gray-800">
-                    <p className="text-sm text-gray-400">Total de Clientes</p>
+                    <p className="text-sm text-gray-400">Total de Prospects</p>
                     <p className="text-2xl font-bold text-white">{clients.length}</p>
                   </div>
                   <div className="bg-gray-900 p-6 rounded-lg border border-gray-800">
@@ -797,7 +819,7 @@ export default function Home() {
                   <div className="bg-gray-900 p-6 rounded-lg border border-gray-800">
                     <p className="text-sm text-gray-400">Taxa de Conversão</p>
                     <p className="text-2xl font-bold text-white">
-                      {clients.length > 0 ? Math.round((getClientsByStage('Fechado').length / clients.length) * 100) : 0}%
+                      {clients.length > 0 ? Math.round((getClientsByStage('Ativação').length / clients.length) * 100) : 0}%
                     </p>
                   </div>
                 </div>
@@ -806,7 +828,7 @@ export default function Home() {
                   <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
                     <h3 className="text-lg font-semibold text-white mb-4">Pipeline por Etapa</h3>
                     <div className="space-y-3">
-                      {['Prospect', 'Qualificação', 'Proposta', 'Fechado'].map(stage => (
+                      {['Qualificação', '1ª Reunião', '2ª Reunião', 'Cadastro', 'Ativação'].map(stage => (
                         <div key={stage} className="flex justify-between items-center">
                           <span className="text-gray-300">{stage}</span>
                           <div className="text-right">
@@ -847,8 +869,8 @@ export default function Home() {
             {activeTab === 'pipeline' && (
               <div>
                 <h2 className="text-2xl font-bold text-white mb-6">Pipeline de Vendas</h2>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  {['Prospect', 'Qualificação', 'Proposta', 'Fechado'].map((stage, index) => (
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                  {['Qualificação', '1ª Reunião', '2ª Reunião', 'Cadastro', 'Ativação'].map((stage, index) => (
                     <div key={stage} className="bg-gray-900 rounded-lg border border-gray-800 p-4">
                       <div className="flex justify-between items-center mb-4">
                         <h3 className="font-semibold text-white">{stage}</h3>
@@ -866,9 +888,9 @@ export default function Home() {
                             <p className="text-gray-400 text-xs">{client.company}</p>
                             <p className="text-yellow-400 text-xs">R$ {(client.aum_value || 0).toLocaleString()}</p>
                             <div className="flex space-x-1 mt-2">
-                              {index < 3 && (
+                              {index < 4 && (
                                 <button 
-                                  onClick={() => moveClientInPipeline(client.id, ['Qualificação', 'Proposta', 'Fechado'][index])}
+                                  onClick={() => moveClientInPipeline(client.id, ['1ª Reunião', '2ª Reunião', 'Cadastro', 'Ativação'][index])}
                                   className="text-xs bg-yellow-400/20 text-yellow-400 px-2 py-1 rounded hover:bg-yellow-400/30"
                                 >
                                   →
@@ -887,20 +909,20 @@ export default function Home() {
             {activeTab === 'clients' && (
               <div>
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-white">Clientes</h2>
+                  <h2 className="text-2xl font-bold text-white">Prospects</h2>
                   <div className="flex space-x-4">
                     <input 
                       type="text"
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      placeholder="Buscar clientes..."
+                      placeholder="Buscar prospects..."
                       className="bg-gray-800 border border-gray-700 text-white px-4 py-2 rounded-lg focus:border-yellow-400 focus:outline-none"
                     />
                     <button 
                       onClick={() => setShowClientForm(true)}
                       className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold"
                     >
-                      + Adicionar Cliente
+                      + Adicionar Prospect
                     </button>
                   </div>
                 </div>
@@ -908,13 +930,13 @@ export default function Home() {
                 <div className="bg-gray-900 rounded-lg border border-gray-800">
                   <div className="p-6 border-b border-gray-800">
                     <p className="text-gray-400">
-                      {filteredClients.length} de {clients.length} clientes
+                      {filteredClients.length} de {clients.length} prospects
                     </p>
                   </div>
                   <div className="p-6">
                     {filteredClients.length === 0 ? (
                       <p className="text-center text-gray-400">
-                        {searchTerm ? 'Nenhum cliente encontrado.' : 'Nenhum cliente cadastrado ainda.'}
+                        {searchTerm ? 'Nenhum prospect encontrado.' : 'Nenhum prospect cadastrado ainda.'}
                       </p>
                     ) : (
                       <div className="space-y-4">
@@ -1032,6 +1054,78 @@ export default function Home() {
                 </div>
               </div>
             )}
+
+            {activeTab === 'consorcio' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-white">Funil de Consórcio</h2>
+                  <button className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold">
+                    + Nova Oportunidade
+                  </button>
+                </div>
+                <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                  <p className="text-center text-gray-400">
+                    Funil de Consórcio em desenvolvimento.
+                    <br />
+                    Aqui você poderá gerenciar suas oportunidades de consórcio.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'seguros' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-white">Funil de Seguros</h2>
+                  <button className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold">
+                    + Nova Oportunidade
+                  </button>
+                </div>
+                <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                  <p className="text-center text-gray-400">
+                    Funil de Seguros em desenvolvimento.
+                    <br />
+                    Aqui você poderá gerenciar suas oportunidades de seguros.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'cambio' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-white">Funil de Câmbio</h2>
+                  <button className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold">
+                    + Nova Oportunidade
+                  </button>
+                </div>
+                <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                  <p className="text-center text-gray-400">
+                    Funil de Câmbio em desenvolvimento.
+                    <br />
+                    Aqui você poderá gerenciar suas operações de câmbio.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'eventos' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-white">Gestão de Eventos</h2>
+                  <button className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold">
+                    + Novo Evento
+                  </button>
+                </div>
+                <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                  <p className="text-center text-gray-400">
+                    Gestão de Eventos em desenvolvimento.
+                    <br />
+                    Aqui você poderá organizar e acompanhar seus eventos e palestras.
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -1042,7 +1136,7 @@ export default function Home() {
           <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-bold text-white">
-                {editingClient ? 'Editar Cliente' : 'Cadastrar Cliente'}
+                {editingClient ? 'Editar Prospect' : 'Cadastrar Prospect'}
               </h3>
               <button 
                 onClick={() => {
@@ -1061,14 +1155,14 @@ export default function Home() {
                 value={clientData.name}
                 onChange={(e) => setClientData({...clientData, name: e.target.value})}
                 className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
-                placeholder="Nome do cliente" 
+                placeholder="Nome do prospect" 
               />
               <input 
                 type="email" 
                 value={clientData.email}
                 onChange={(e) => setClientData({...clientData, email: e.target.value})}
                 className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
-                placeholder="Email do cliente" 
+                placeholder="Email do prospect" 
               />
               <input 
                 type="tel" 
@@ -1123,17 +1217,18 @@ export default function Home() {
                   onChange={(e) => setClientData({...clientData, pipeline_stage: e.target.value})}
                   className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
                 >
-                  <option value="Prospect">Prospect</option>
                   <option value="Qualificação">Qualificação</option>
-                  <option value="Proposta">Proposta</option>
-                  <option value="Fechado">Fechado</option>
+                  <option value="1ª Reunião">1ª Reunião</option>
+                  <option value="2ª Reunião">2ª Reunião</option>
+                  <option value="Cadastro">Cadastro</option>
+                  <option value="Ativação">Ativação</option>
                 </select>
               </div>
               <button 
                 onClick={handleClientSubmit}
                 className="w-full gold-gradient text-black py-3 rounded-lg font-semibold hover-glow transition-all duration-300"
               >
-                {editingClient ? 'Atualizar Cliente' : 'Cadastrar Cliente'}
+                {editingClient ? 'Atualizar Prospect' : 'Cadastrar Prospect'}
               </button>
             </div>
           </div>
@@ -1279,7 +1374,7 @@ export default function Home() {
               <div className="text-red-400 text-6xl mb-4">⚠️</div>
               <h3 className="text-xl font-bold text-white mb-2">Confirmar Exclusão</h3>
               <p className="text-gray-400 mb-6">
-                Tem certeza que deseja deletar o cliente <strong>{deletingClient.name}</strong>? 
+                Tem certeza que deseja deletar o prospect <strong>{deletingClient.name}</strong>? 
                 Esta ação não pode ser desfeita.
               </p>
               <div className="flex space-x-4">
@@ -1304,70 +1399,7 @@ export default function Home() {
         </div>
       )}
 
-      {/* Modal de Demonstração */}
-      {showDemo && (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-4xl p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-2xl font-bold text-white">Demonstração do CRM</h3>
-              <button 
-                onClick={() => setShowDemo(false)}
-                className="text-gray-400 hover:text-gray-300 text-2xl"
-              >
-                ×
-              </button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div className="bg-gray-800 p-4 rounded-lg">
-                  <h4 className="font-semibold text-white mb-2">📊 Dashboard Completo</h4>
-                  <p className="text-gray-400 text-sm">Visão 360° dos seus clientes, pipeline e métricas em tempo real</p>
-                </div>
-                <div className="bg-gray-800 p-4 rounded-lg">
-                  <h4 className="font-semibold text-white mb-2">🏢 Pipeline Visual</h4>
-                  <p className="text-gray-400 text-sm">Funil de vendas interativo com drag & drop</p>
-                </div>
-                <div className="bg-gray-800 p-4 rounded-lg">
-                  <h4 className="font-semibold text-white mb-2">📋 Gestão de Atividades</h4>
-                  <p className="text-gray-400 text-sm">Follow-ups automáticos e timeline de interações</p>
-                </div>
-              </div>
-              <div className="bg-gray-800 p-4 rounded-lg">
-                <h4 className="font-semibold text-white mb-4">🎯 Resultados Comprovados</h4>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Aumento em vendas:</span>
-                    <span className="text-green-400 font-semibold">+45%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Economia de tempo:</span>
-                    <span className="text-green-400 font-semibold">+60%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Taxa de conversão:</span>
-                    <span className="text-green-400 font-semibold">+35%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Satisfação do cliente:</span>
-                    <span className="text-green-400 font-semibold">98%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="mt-6 text-center">
-              <button 
-                onClick={() => {
-                  setShowDemo(false)
-                  setCurrentPage('signup')
-                }}
-                className="gold-gradient text-black px-8 py-3 rounded-lg font-semibold hover-glow transition-all duration-300"
-              >
-                Começar Teste Grátis
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   )
 }
