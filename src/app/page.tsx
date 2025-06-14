@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import type { User } from '@supabase/supabase-js'
 
 interface Client {
   id: string
+  user_id: string
   name: string
   email: string
   phone?: string
@@ -18,6 +20,7 @@ interface Client {
 
 interface Activity {
   id: string
+  user_id: string
   client_id: string
   type: string
   title: string
@@ -36,6 +39,11 @@ interface Plan {
 }
 
 export default function Home() {
+  // Auth states
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
+  
+  // Page states
   const [currentPage, setCurrentPage] = useState('landing')
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
   const [showDemo, setShowDemo] = useState(false)
@@ -51,12 +59,12 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState('overview')
   const [searchTerm, setSearchTerm] = useState('')
   
-  const [formData, setFormData] = useState({
-    name: '',
+  // Form states
+  const [authData, setAuthData] = useState({
     email: '',
-    phone: '',
-    company: '',
-    password: ''
+    password: '',
+    name: '',
+    company: ''
   })
 
   const [clientData, setClientData] = useState({
@@ -77,11 +85,116 @@ export default function Home() {
     scheduled_date: ''
   })
 
+  // Check auth status on load
+  useEffect(() => {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+      console.log('DEBUG - Session at load:', session)
+      setUser(session?.user ?? null)
+      setLoading(false)
+      
+      if (session?.user) {
+        console.log('DEBUG - User at load:', session.user)
+        setCurrentPage('dashboard')
+      }
+    }
+    
+    getSession()
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('DEBUG - Auth state change:', event, session)
+        setUser(session?.user ?? null)
+        if (session?.user) {
+          setCurrentPage('dashboard')
+        } else {
+          setCurrentPage('landing')
+        }
+      }
+    )
+
+    return () => subscription.unsubscribe()
+  }, [])
+
+  // Auth functions
+  const handleSignUp = async () => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: authData.email,
+        password: authData.password,
+        options: {
+          data: {
+            name: authData.name,
+            company: authData.company
+          }
+        }
+      })
+
+      if (error) {
+        alert('Erro no cadastro: ' + error.message)
+      } else {
+        alert('Cadastro realizado! Verifique seu email para confirmar a conta.')
+      }
+    } catch (err) {
+      alert('Erro ao cadastrar: ' + String(err))
+    }
+  }
+
+  const handleSignIn = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: authData.email,
+        password: authData.password
+      })
+
+      if (error) {
+        alert('Erro no login: ' + error.message)
+      }
+      // Success handled by onAuthStateChange
+    } catch (err) {
+      alert('Erro ao fazer login: ' + String(err))
+    }
+  }
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut()
+    } catch (err) {
+      alert('Erro ao sair: ' + String(err))
+    }
+  }
+
+  const handleResetPassword = async () => {
+    if (!authData.email) {
+      alert('Digite seu email primeiro')
+      return
+    }
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(authData.email, {
+        redirectTo: window.location.origin + '/reset-password'
+      })
+
+      if (error) {
+        alert('Erro: ' + error.message)
+      } else {
+        alert('Email de recuperação enviado! Verifique sua caixa de entrada.')
+      }
+    } catch (err) {
+      alert('Erro ao enviar email: ' + String(err))
+    }
+  }
+
+  // Data fetching functions (now filtered by user)
   const fetchClients = async () => {
+    if (!user) return
+    
     try {
       const { data, error } = await supabase
         .from('clients')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
       
       if (error) {
@@ -95,10 +208,13 @@ export default function Home() {
   }
 
   const fetchActivities = async () => {
+    if (!user) return
+    
     try {
       const { data, error } = await supabase
         .from('activities')
         .select('*')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
       
       if (error) {
@@ -112,36 +228,25 @@ export default function Home() {
   }
 
   useEffect(() => {
-    if (currentPage === 'dashboard') {
+    if (currentPage === 'dashboard' && user) {
       fetchClients()
       fetchActivities()
     }
-  }, [currentPage])
+  }, [currentPage, user])
 
-  const handleSignup = async () => {
-    try {
-      const { error } = await supabase
-        .from('users')
-        .insert([{
-          name: formData.name,
-          email: formData.email,
-          company: formData.company
-        }])
-      
-      if (error) {
-        alert('Erro: ' + error.message)
-      } else {
-        alert('Cadastro realizado com sucesso!')
-        setCurrentPage('dashboard')
-      }
-    } catch (err) {
-      alert('Erro ao cadastrar: ' + String(err))
-    }
-  }
-
+  // CRUD functions (now with user_id)
   const handleClientSubmit = async () => {
+    if (!user) return
+    
+    // DEBUG - LINHAS ADICIONADAS PARA INVESTIGAR O PROBLEMA:
+    console.log('DEBUG - user completo:', user)
+    console.log('DEBUG - user.id:', user?.id)
+    console.log('DEBUG - user object full:', JSON.stringify(user, null, 2))
+    console.log('DEBUG - clientData:', clientData)
+    
     try {
       if (editingClient) {
+        console.log('DEBUG - Editando cliente, user_id que será usado:', user.id)
         const { error } = await supabase
           .from('clients')
           .update({
@@ -155,8 +260,10 @@ export default function Home() {
             pipeline_stage: clientData.pipeline_stage
           })
           .eq('id', editingClient.id)
+          .eq('user_id', user.id)
         
         if (error) {
+          console.error('DEBUG - Erro no update:', error)
           alert('Erro ao atualizar cliente: ' + error.message)
         } else {
           alert('Cliente atualizado com sucesso!')
@@ -166,22 +273,29 @@ export default function Home() {
           fetchClients()
         }
       } else {
+        console.log('DEBUG - Criando novo cliente, user_id que será salvo:', user.id)
+        const insertData = {
+          user_id: user.id,
+          name: clientData.name,
+          email: clientData.email,
+          phone: clientData.phone,
+          company: clientData.company,
+          aum_value: clientData.aum_value ? parseFloat(clientData.aum_value) : null,
+          risk_profile: clientData.risk_profile,
+          status: clientData.status,
+          pipeline_stage: clientData.pipeline_stage
+        }
+        console.log('DEBUG - Dados que serão inseridos:', insertData)
+        
         const { error } = await supabase
           .from('clients')
-          .insert({
-            name: clientData.name,
-            email: clientData.email,
-            phone: clientData.phone,
-            company: clientData.company,
-            aum_value: clientData.aum_value ? parseFloat(clientData.aum_value) : null,
-            risk_profile: clientData.risk_profile,
-            status: clientData.status,
-            pipeline_stage: clientData.pipeline_stage
-          })
+          .insert(insertData)
         
         if (error) {
+          console.error('DEBUG - Erro no insert:', error)
           alert('Erro ao cadastrar cliente: ' + error.message)
         } else {
+          console.log('DEBUG - Cliente inserido com sucesso!')
           alert('Cliente cadastrado com sucesso!')
           setShowClientForm(false)
           resetClientForm()
@@ -189,7 +303,7 @@ export default function Home() {
         }
       }
     } catch (err) {
-      console.log('Erro catch:', err)
+      console.log('DEBUG - Erro catch:', err)
       alert('Erro ao salvar cliente: ' + String(err))
     }
   }
@@ -210,11 +324,14 @@ export default function Home() {
   }
 
   const handleDeleteClient = async (client: Client) => {
+    if (!user) return
+    
     try {
       const { error } = await supabase
         .from('clients')
         .delete()
         .eq('id', client.id)
+        .eq('user_id', user.id)
       
       if (error) {
         alert('Erro ao deletar cliente: ' + error.message)
@@ -230,12 +347,13 @@ export default function Home() {
   }
 
   const handleActivitySubmit = async () => {
-    if (!selectedClientForActivity) return
+    if (!selectedClientForActivity || !user) return
     
     try {
       const { error } = await supabase
         .from('activities')
         .insert({
+          user_id: user.id,
           client_id: selectedClientForActivity.id,
           type: activityData.type,
           title: activityData.title,
@@ -258,6 +376,8 @@ export default function Home() {
   }
 
   const markActivityCompleted = async (activityId: string) => {
+    if (!user) return
+    
     try {
       const { error } = await supabase
         .from('activities')
@@ -266,6 +386,7 @@ export default function Home() {
           completed_date: new Date().toISOString()
         })
         .eq('id', activityId)
+        .eq('user_id', user.id)
       
       if (error) {
         alert('Erro ao marcar atividade: ' + error.message)
@@ -278,11 +399,14 @@ export default function Home() {
   }
 
   const moveClientInPipeline = async (clientId: string, newStage: string) => {
+    if (!user) return
+    
     try {
       const { error } = await supabase
         .from('clients')
         .update({ pipeline_stage: newStage })
         .eq('id', clientId)
+        .eq('user_id', user.id)
       
       if (error) {
         alert('Erro ao mover cliente: ' + error.message)
@@ -294,6 +418,7 @@ export default function Home() {
     }
   }
 
+  // Helper functions
   const resetClientForm = () => {
     setClientData({
       name: '',
@@ -357,6 +482,18 @@ export default function Home() {
     }
   ]
 
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto mb-4"></div>
+          <p className="text-white">Carregando...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="gradient-bg text-white min-h-screen">
       <style jsx global>{`
@@ -380,7 +517,7 @@ export default function Home() {
                   <span className="text-xl font-bold gold-text">CRM do Assessor</span>
                 </div>
                 <div className="flex items-center space-x-4">
-                  <button onClick={() => setCurrentPage('signup')} className="text-gray-300 hover:text-yellow-400 transition">Entrar</button>
+                  <button onClick={() => setCurrentPage('login')} className="text-gray-300 hover:text-yellow-400 transition">Entrar</button>
                   <button onClick={() => setCurrentPage('signup')} className="gold-gradient text-black px-6 py-2 rounded-lg hover-glow transition-all duration-300 font-semibold">Começar Agora</button>
                 </div>
               </div>
@@ -481,6 +618,53 @@ export default function Home() {
         </div>
       )}
 
+      {currentPage === 'login' && (
+        <div className="min-h-screen flex items-center justify-center p-4">
+          <div className="max-w-md w-full bg-gray-900 rounded-2xl shadow-2xl p-8">
+            <div className="text-center mb-6">
+              <h1 className="text-2xl font-bold text-white mb-2">Entrar na Conta</h1>
+              <p className="text-gray-400">Acesse seu CRM</p>
+            </div>
+            <div className="space-y-4">
+              <input 
+                type="email" 
+                value={authData.email}
+                onChange={(e) => setAuthData({...authData, email: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Email" 
+              />
+              <input 
+                type="password" 
+                value={authData.password}
+                onChange={(e) => setAuthData({...authData, password: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Senha" 
+              />
+              <button onClick={handleSignIn} className="w-full gold-gradient text-black py-3 rounded-lg font-semibold hover-glow transition-all duration-300">
+                Entrar
+              </button>
+              <button 
+                onClick={handleResetPassword}
+                className="w-full text-yellow-400 text-sm hover:text-yellow-300 transition"
+              >
+                Esqueci minha senha
+              </button>
+            </div>
+            <div className="text-center mt-6">
+              <p className="text-gray-400 text-sm">
+                Não tem conta? 
+                <button onClick={() => setCurrentPage('signup')} className="text-yellow-400 hover:text-yellow-300 ml-1">
+                  Cadastre-se
+                </button>
+              </p>
+            </div>
+            <button onClick={() => setCurrentPage('landing')} className="text-gray-400 hover:text-gray-300 mt-4 text-center w-full">
+              ← Voltar
+            </button>
+          </div>
+        </div>
+      )}
+
       {currentPage === 'signup' && (
         <div className="min-h-screen flex items-center justify-center p-4">
           <div className="max-w-md w-full bg-gray-900 rounded-2xl shadow-2xl p-8">
@@ -495,46 +679,44 @@ export default function Home() {
             <div className="space-y-4">
               <input 
                 type="text" 
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                value={authData.name}
+                onChange={(e) => setAuthData({...authData, name: e.target.value})}
                 className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
                 placeholder="Nome completo" 
               />
               <input 
                 type="email" 
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
+                value={authData.email}
+                onChange={(e) => setAuthData({...authData, email: e.target.value})}
                 className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
                 placeholder="Email profissional" 
               />
               <input 
-                type="tel" 
-                value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
-                placeholder="Telefone" 
-              />
-              <input 
                 type="text" 
-                value={formData.company}
-                onChange={(e) => setFormData({...formData, company: e.target.value})}
+                value={authData.company}
+                onChange={(e) => setAuthData({...authData, company: e.target.value})}
                 className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
                 placeholder="Empresa/Corretora" 
               />
               <input 
                 type="password" 
-                value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                value={authData.password}
+                onChange={(e) => setAuthData({...authData, password: e.target.value})}
                 className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
-                placeholder="Senha" 
+                placeholder="Senha (mín. 6 caracteres)" 
               />
-              <button onClick={handleSignup} className="w-full gold-gradient text-black py-3 rounded-lg font-semibold hover-glow transition-all duration-300">
-                Assinar Agora
+              <button onClick={handleSignUp} className="w-full gold-gradient text-black py-3 rounded-lg font-semibold hover-glow transition-all duration-300">
+                Criar Conta
               </button>
             </div>
-            <p className="text-center text-gray-400 text-sm mt-4">
-              Ao se cadastrar, você concorda com nossos termos de uso
-            </p>
+            <div className="text-center mt-6">
+              <p className="text-gray-400 text-sm">
+                Já tem conta? 
+                <button onClick={() => setCurrentPage('login')} className="text-yellow-400 hover:text-yellow-300 ml-1">
+                  Entrar
+                </button>
+              </p>
+            </div>
             <button onClick={() => setCurrentPage('landing')} className="text-gray-400 hover:text-gray-300 mt-4 text-center w-full">
               ← Voltar
             </button>
@@ -542,7 +724,7 @@ export default function Home() {
         </div>
       )}
 
-      {currentPage === 'dashboard' && (
+      {currentPage === 'dashboard' && user && (
         <div className="min-h-screen bg-black">
           <header className="bg-gray-900 shadow-lg border-b border-gray-800">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -550,6 +732,9 @@ export default function Home() {
                 <div className="flex items-center space-x-4">
                   <span className="text-2xl">📈</span>
                   <h1 className="text-xl font-bold text-white">CRM do Assessor</h1>
+                  <span className="text-sm text-gray-400">
+                    - {user.user_metadata?.name || user.email}
+                  </span>
                 </div>
                 <div className="flex items-center space-x-4">
                   <button 
@@ -558,7 +743,7 @@ export default function Home() {
                   >
                     + Novo Cliente
                   </button>
-                  <button onClick={() => setCurrentPage('landing')} className="text-gray-400 hover:text-yellow-400 text-sm transition">Sair</button>
+                  <button onClick={handleSignOut} className="text-gray-400 hover:text-yellow-400 text-sm transition">Sair</button>
                 </div>
               </div>
             </div>
@@ -813,7 +998,7 @@ export default function Home() {
                           <div key={activity.id} className="bg-gray-800 p-4 rounded-lg flex justify-between items-center">
                             <div className="flex-1">
                               <div className="flex items-center space-x-2">
-                                <span className="text-lg">{activity.type === 'Ligação' ? '📞' : activity.type === 'Reunião' ? '👥' : activity.type === 'Email' ? '📧' : '💬'}</span>
+                                <span className="text-lg">{activity.type === '📞 Ligação' ? '📞' : activity.type === '👥 Reunião' ? '👥' : activity.type === '📧 Email' ? '📧' : '💬'}</span>
                                 <div>
                                   <p className="font-medium text-white">{activity.title}</p>
                                   <p className="text-sm text-gray-400">{client?.name}</p>
@@ -1062,7 +1247,7 @@ export default function Home() {
                 getClientActivities(selectedClientForActivity.id).map((activity) => (
                   <div key={activity.id} className="bg-gray-800 p-4 rounded-lg">
                     <div className="flex items-start space-x-3">
-                      <span className="text-2xl">{activity.type === 'Ligação' ? '📞' : activity.type === 'Reunião' ? '👥' : activity.type === 'Email' ? '📧' : '💬'}</span>
+                      <span className="text-2xl">{activity.type === '📞 Ligação' ? '📞' : activity.type === '👥 Reunião' ? '👥' : activity.type === '📧 Email' ? '📧' : '💬'}</span>
                       <div className="flex-1">
                         <p className="font-medium text-white">{activity.title}</p>
                         {activity.description && <p className="text-gray-400 text-sm mt-1">{activity.description}</p>}
