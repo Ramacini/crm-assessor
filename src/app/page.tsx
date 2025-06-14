@@ -3,20 +3,59 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 
+interface Client {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  company?: string;
+  aum_value?: number;
+  risk_profile?: string;
+  status: string;
+  pipeline_stage: string;
+  created_at?: string;
+}
+
+interface Activity {
+  id: string;
+  client_id: string;
+  type: string;
+  title: string;
+  description?: string;
+  completed: boolean;
+  scheduled_date?: string;
+  completed_date?: string;
+  created_at: string;
+  clients?: {
+    name: string;
+    email: string;
+  };
+}
+
+interface Plan {
+  name: string;
+  price: number;
+  originalPrice: number;
+  description: string;
+  features: string[];
+  annualPrice: number;
+  popular?: boolean;
+}
+
 export default function Home() {
   const [currentPage, setCurrentPage] = useState('landing')
-  const [selectedPlan, setSelectedPlan] = useState<any>(null)
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
   const [showDemo, setShowDemo] = useState(false)
-  const [clients, setClients] = useState<any[]>([])
-  const [filteredClients, setFilteredClients] = useState<any[]>([])
+  const [clients, setClients] = useState<Client[]>([])
+  const [filteredClients, setFilteredClients] = useState<Client[]>([])
   const [showClientForm, setShowClientForm] = useState(false)
-  const [editingClient, setEditingClient] = useState<any>(null)
+  const [editingClient, setEditingClient] = useState<Client | null>(null)
   const [searchTerm, setSearchTerm] = useState('')
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<any>(null)
-  const [activities, setActivities] = useState<any[]>([])
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<Client | null>(null)
+  const [activities, setActivities] = useState<Activity[]>([])
   const [showActivityForm, setShowActivityForm] = useState(false)
-  const [selectedClientForActivity, setSelectedClientForActivity] = useState<any>(null)
-  const [showActivitiesModal, setShowActivitiesModal] = useState<any>(null)
+  const [selectedClientForActivity, setSelectedClientForActivity] = useState<Client | null>(null)
+  const [showActivitiesModal, setShowActivitiesModal] = useState<Client | null>(null)
   const [activeTab, setActiveTab] = useState('overview')
 
   // Função para mover cliente no pipeline
@@ -33,7 +72,7 @@ export default function Home() {
         fetchClients() // Recarregar dados
       }
     } catch (err) {
-      alert('Erro ao cadastrar: ' + String(err))
+      alert('Erro ao mover cliente: ' + String(err))
     }
   }
   
@@ -102,6 +141,7 @@ export default function Home() {
         setClients(data || [])
         setFilteredClients(data || [])
       }
+      }
     } catch (err) {
       console.error('Erro:', err)
     }
@@ -131,7 +171,7 @@ export default function Home() {
 
   const handleSignup = async () => {
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('users')
         .insert([{
           name: formData.name,
@@ -187,11 +227,11 @@ export default function Home() {
           })
       }
       
-      const { data, error } = result
-      console.log('Resposta:', { data, error })
+      const { error } = result
+      console.log('Resposta:', { error })
       
       if (error) {
-        alert('Erro ao salvar cliente: ' + JSON.stringify(error))
+        alert('Erro ao salvar cliente: ' + error.message)
       } else {
         alert(editingClient ? 'Cliente atualizado com sucesso!' : 'Cliente cadastrado com sucesso!')
         setClientData({
@@ -210,11 +250,11 @@ export default function Home() {
       }
     } catch (err) {
       console.log('Erro catch:', err)
-      alert('Erro ao salvar cliente: ' + err.message)
+      alert('Erro ao salvar cliente: ' + String(err))
     }
   }
 
-  const handleEditClient = (client: any) => {
+  const handleEditClient = (client: Client) => {
     setEditingClient(client)
     setClientData({
       name: client.name,
@@ -244,7 +284,7 @@ export default function Home() {
         fetchClients()
       }
     } catch (err) {
-      alert('Erro ao deletar cliente: ' + err.message)
+      alert('Erro ao deletar cliente: ' + String(err))
     }
   }
 
@@ -255,7 +295,7 @@ export default function Home() {
     }
 
     try {
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('activities')
         .insert({
           client_id: selectedClientForActivity.id,
@@ -267,7 +307,7 @@ export default function Home() {
         })
       
       if (error) {
-        alert('Erro ao criar atividade: ' + JSON.stringify(error))
+        alert('Erro ao criar atividade: ' + error.message)
       } else {
         alert('Atividade criada com sucesso!')
         setActivityData({
@@ -282,7 +322,7 @@ export default function Home() {
         fetchActivities()
       }
     } catch (err) {
-      alert('Erro ao criar atividade: ' + err.message)
+      alert('Erro ao criar atividade: ' + String(err))
     }
   }
 
@@ -302,7 +342,7 @@ export default function Home() {
         fetchActivities()
       }
     } catch (err) {
-      alert('Erro ao cadastrar: ' + String(err))
+      alert('Erro ao completar atividade: ' + String(err))
     }
   }
 
@@ -321,7 +361,7 @@ export default function Home() {
     setShowClientForm(false)
   }
 
-  const plans = [
+  const plans: Plan[] = [
     {
       name: 'Starter',
       price: 39.90,
@@ -1541,7 +1581,7 @@ export default function Home() {
                     value={selectedClientForActivity?.id || ''}
                     onChange={(e) => {
                       const client = clients.find(c => c.id === e.target.value)
-                      setSelectedClientForActivity(client)
+                      setSelectedClientForActivity(client || null)
                     }}
                     className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-yellow-400"
                   >
@@ -1709,8 +1749,9 @@ export default function Home() {
             <div className="p-6 border-t border-gray-800">
               <button 
                 onClick={() => {
+                  const currentClient = showActivitiesModal
                   setShowActivitiesModal(null)
-                  setSelectedClientForActivity(showActivitiesModal)
+                  setSelectedClientForActivity(currentClient)
                   setShowActivityForm(true)
                 }}
                 className="w-full gold-gradient text-black py-2 rounded-lg font-semibold hover-glow transition-all duration-300"
