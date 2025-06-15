@@ -216,7 +216,7 @@ export default function Home() {
   const handleSignUp = async () => {
     try {
       // First create the user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const { data: signUpData, error: authError } = await supabase.auth.signUp({
         email: authData.email,
         password: authData.password,
         options: {
@@ -233,7 +233,7 @@ export default function Home() {
       }
 
       // If company account, create company
-      if (authData.accountType !== 'individual' && authData.user) {
+      if (authData.accountType !== 'individual' && signUpData.user) {
         const { data: company, error: companyError } = await supabase
           .from('companies')
           .insert({
@@ -253,16 +253,16 @@ export default function Home() {
         await supabase
           .from('user_profiles')
           .insert({
-            user_id: authData.user.id,
+            user_id: signUpData.user.id,
             company_id: company.id,
             role: 'admin'
           })
-      } else if (authData.user) {
+      } else if (signUpData.user) {
         // Individual account
         await supabase
           .from('user_profiles')
           .insert({
-            user_id: authData.user.id,
+            user_id: signUpData.user.id,
             role: 'user'
           })
       }
@@ -1341,7 +1341,667 @@ export default function Home() {
 
             {/* Continue with other tabs... (keeping the same structure but adding company_id where needed) */}
             
-            {/* Modals remain the same with company_id additions... */}
+            {activeTab === 'clients' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-white">Prospects</h2>
+                  <div className="flex space-x-4">
+                    <input 
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Buscar prospects..."
+                      className="bg-gray-800 border border-gray-700 text-white px-4 py-2 rounded-lg focus:border-yellow-400 focus:outline-none"
+                    />
+                    <button 
+                      onClick={() => setShowClientForm(true)}
+                      className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold"
+                    >
+                      + Adicionar Prospect
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-gray-900 rounded-lg border border-gray-800">
+                  <div className="p-6 border-b border-gray-800">
+                    <p className="text-gray-400">
+                      {filteredClients.length} de {clients.length} prospects
+                    </p>
+                  </div>
+                  <div className="p-6">
+                    {filteredClients.length === 0 ? (
+                      <p className="text-center text-gray-400">
+                        {searchTerm ? 'Nenhum prospect encontrado.' : 'Nenhum prospect cadastrado ainda.'}
+                      </p>
+                    ) : (
+                      <div className="space-y-4">
+                        {filteredClients.map((client) => (
+                          <div key={client.id} className="bg-gray-800 p-4 rounded-lg flex justify-between items-center">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-4">
+                                <div>
+                                  <p className="font-medium text-white">{client.name}</p>
+                                  <p className="text-sm text-gray-400">{client.email}</p>
+                                  <p className="text-sm text-gray-400">{client.company}</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-yellow-400 font-semibold">R$ {(client.aum_value || 0).toLocaleString()}</p>
+                                  <span className="px-2 py-1 rounded-full text-xs bg-blue-400/20 text-blue-400">
+                                    {client.pipeline_stage}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex space-x-2">
+                              <button 
+                                onClick={() => {
+                                  setSelectedClientForActivity(client)
+                                  setShowActivityForm(true)
+                                }}
+                                className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                              >
+                                📋 Atividade
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  setSelectedClientForActivity(client)
+                                  setShowClientActivities(true)
+                                }}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+                              >
+                                📊 Histórico
+                              </button>
+                              <button 
+                                onClick={() => handleEditClient(client)}
+                                className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm"
+                              >
+                                ✏️ Editar
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  setDeletingClient(client)
+                                  setShowDeleteConfirm(true)
+                                }}
+                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm"
+                              >
+                                🗑️ Deletar
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'activities' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-white">Atividades</h2>
+                </div>
+
+                <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                  {activities.length === 0 ? (
+                    <p className="text-center text-gray-400">
+                      Nenhuma atividade criada ainda.
+                    </p>
+                  ) : (
+                    <div className="space-y-4">
+                      {activities.map((activity) => {
+                        const client = clients.find(c => c.id === activity.client_id)
+                        return (
+                          <div key={activity.id} className="bg-gray-800 p-4 rounded-lg flex justify-between items-center">
+                            <div className="flex-1">
+                              <div className="flex items-center space-x-2">
+                                <span className="text-lg">{activity.type === '📞 Ligação' ? '📞' : activity.type === '👥 Reunião' ? '👥' : activity.type === '📧 Email' ? '📧' : '💬'}</span>
+                                <div>
+                                  <p className="font-medium text-white">{activity.title}</p>
+                                  <p className="text-sm text-gray-400">{client?.name}</p>
+                                  {activity.description && <p className="text-sm text-gray-500">{activity.description}</p>}
+                                  {activity.scheduled_date && (
+                                    <p className="text-sm text-yellow-400">
+                                      📅 {new Date(activity.scheduled_date).toLocaleString('pt-BR')}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <span className={`px-3 py-1 rounded-full text-sm ${activity.completed ? 'bg-green-400/20 text-green-400' : 'bg-yellow-400/20 text-yellow-400'}`}>
+                                {activity.completed ? 'Concluída' : 'Pendente'}
+                              </span>
+                              {!activity.completed && (
+                                <button 
+                                  onClick={() => markActivityCompleted(activity.id)}
+                                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded text-sm"
+                                >
+                                  ✓ Concluir
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'consorcio' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-white">Funil de Consórcio</h2>
+                  <button 
+                    onClick={() => {
+                      setCurrentFunnel('consorcio')
+                      setShowOpportunityForm(true)
+                    }}
+                    className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold"
+                  >
+                    + Nova Oportunidade
+                  </button>
+                </div>
+                <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                  <p className="text-center text-gray-400">
+                    Funil de Consórcio em desenvolvimento.
+                    <br />
+                    Aqui você poderá gerenciar suas oportunidades de consórcio.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'seguros' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-white">Funil de Seguros</h2>
+                  <button 
+                    onClick={() => {
+                      setCurrentFunnel('seguros')
+                      setShowOpportunityForm(true)
+                    }}
+                    className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold"
+                  >
+                    + Nova Oportunidade
+                  </button>
+                </div>
+                <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                  <p className="text-center text-gray-400">
+                    Funil de Seguros em desenvolvimento.
+                    <br />
+                    Aqui você poderá gerenciar suas oportunidades de seguros.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'cambio' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-white">Funil de Câmbio</h2>
+                  <button 
+                    onClick={() => {
+                      setCurrentFunnel('cambio')
+                      setShowOpportunityForm(true)
+                    }}
+                    className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold"
+                  >
+                    + Nova Oportunidade
+                  </button>
+                </div>
+                <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                  <p className="text-center text-gray-400">
+                    Funil de Câmbio em desenvolvimento.
+                    <br />
+                    Aqui você poderá gerenciar suas operações de câmbio.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'eventos' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-white">Gestão de Eventos</h2>
+                  <button 
+                    onClick={() => {
+                      setCurrentFunnel('eventos')
+                      setShowOpportunityForm(true)
+                    }}
+                    className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold"
+                  >
+                    + Novo Evento
+                  </button>
+                </div>
+                <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                  <p className="text-center text-gray-400">
+                    Gestão de Eventos em desenvolvimento.
+                    <br />
+                    Aqui você poderá organizar e acompanhar seus eventos e palestras.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'ranking' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-2xl font-bold text-white">🏆 Super Ranking</h2>
+                  <div className="flex space-x-2">
+                    <button 
+                      onClick={() => setRankingPeriod('mensal')}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${rankingPeriod === 'mensal' ? 'gold-gradient text-black' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+                    >
+                      Mensal
+                    </button>
+                    <button 
+                      onClick={() => setRankingPeriod('trimestral')}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${rankingPeriod === 'trimestral' ? 'gold-gradient text-black' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+                    >
+                      Trimestral
+                    </button>
+                    <button 
+                      onClick={() => setRankingPeriod('anual')}
+                      className={`px-4 py-2 rounded-lg text-sm font-semibold transition ${rankingPeriod === 'anual' ? 'gold-gradient text-black' : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}`}
+                    >
+                      Anual
+                    </button>
+                  </div>
+                </div>
+
+                {(() => {
+                  const currentUserMetrics = getMetricsForPeriod(rankingPeriod)
+                  return (
+                    <div className="bg-gray-900 rounded-lg border border-gray-800 p-6">
+                      <h3 className="text-xl font-semibold text-white mb-4">🏆 Top 3 - Período {rankingPeriod.charAt(0).toUpperCase() + rankingPeriod.slice(1)}</h3>
+                      <div className="text-center">
+                        <div className="text-4xl font-bold text-yellow-400 mb-2">
+                          Você: {Math.round(currentUserMetrics.score)} pontos
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-blue-400">{currentUserMetrics.newProspects}</div>
+                            <div className="text-sm text-gray-400">Prospects</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-green-400">{currentUserMetrics.conversions}</div>
+                            <div className="text-sm text-gray-400">Conversões</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-2xl font-bold text-yellow-400">R$ {currentUserMetrics.totalAUM.toLocaleString()}</div>
+                            <div className="text-sm text-gray-400">AUM</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })()}
+              </div>
+            )}
+            
+            {/* Modais remain the same with company_id additions... */}
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cadastro/Edição de Prospect */}
+      {showClientForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white">
+                {editingClient ? 'Editar Prospect' : 'Cadastrar Prospect'}
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowClientForm(false)
+                  setEditingClient(null)
+                  resetClientForm()
+                }}
+                className="text-gray-400 hover:text-gray-300 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-4">
+              <input 
+                type="text" 
+                value={clientData.name}
+                onChange={(e) => setClientData({...clientData, name: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Nome do prospect" 
+              />
+              <input 
+                type="email" 
+                value={clientData.email}
+                onChange={(e) => setClientData({...clientData, email: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Email do prospect" 
+              />
+              <input 
+                type="tel" 
+                value={clientData.phone}
+                onChange={(e) => setClientData({...clientData, phone: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Telefone" 
+              />
+              <input 
+                type="text" 
+                value={clientData.company}
+                onChange={(e) => setClientData({...clientData, company: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Empresa" 
+              />
+              <input 
+                type="number" 
+                value={clientData.aum_value}
+                onChange={(e) => setClientData({...clientData, aum_value: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Valor AUM (Assets Under Management)" 
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Perfil de Risco</label>
+                <select 
+                  value={clientData.risk_profile}
+                  onChange={(e) => setClientData({...clientData, risk_profile: e.target.value})}
+                  className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                >
+                  <option value="">Selecione o perfil</option>
+                  <option value="Conservador">Conservador</option>
+                  <option value="Moderado">Moderado</option>
+                  <option value="Arrojado">Arrojado</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Prioridade</label>
+                <select 
+                  value={clientData.priority}
+                  onChange={(e) => setClientData({...clientData, priority: e.target.value})}
+                  className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                >
+                  <option value="Baixa prioridade">Baixa prioridade</option>
+                  <option value="Média prioridade">Média prioridade</option>
+                  <option value="Alta prioridade">Alta prioridade</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Etapa do Pipeline</label>
+                <select 
+                  value={clientData.pipeline_stage}
+                  onChange={(e) => setClientData({...clientData, pipeline_stage: e.target.value})}
+                  className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                >
+                  <option value="Qualificação">Qualificação</option>
+                  <option value="1ª Reunião">1ª Reunião</option>
+                  <option value="2ª Reunião">2ª Reunião</option>
+                  <option value="Cadastro">Cadastro</option>
+                  <option value="Ativação">Ativação</option>
+                </select>
+              </div>
+              <button 
+                onClick={handleClientSubmit}
+                className="w-full gold-gradient text-black py-3 rounded-lg font-semibold hover-glow transition-all duration-300"
+              >
+                {editingClient ? 'Atualizar Prospect' : 'Cadastrar Prospect'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cadastro de Atividade */}
+      {showActivityForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white">Nova Atividade</h3>
+              <button 
+                onClick={() => {
+                  setShowActivityForm(false)
+                  setSelectedClientForActivity(null)
+                  resetActivityForm()
+                }}
+                className="text-gray-400 hover:text-gray-300 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Cliente</label>
+                <select 
+                  value={selectedClientForActivity?.id || ''}
+                  onChange={(e) => {
+                    const client = clients.find(c => c.id === e.target.value)
+                    setSelectedClientForActivity(client || null)
+                  }}
+                  className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                >
+                  <option value="">Selecione um cliente</option>
+                  {clients.map(client => (
+                    <option key={client.id} value={client.id}>{client.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Tipo de Atividade</label>
+                <select 
+                  value={activityData.type}
+                  onChange={(e) => setActivityData({...activityData, type: e.target.value})}
+                  className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                >
+                  <option value="">Selecione o tipo</option>
+                  <option value="📞 Ligação">📞 Ligação</option>
+                  <option value="👥 Reunião">👥 Reunião</option>
+                  <option value="📧 Email">📧 Email</option>
+                  <option value="💬 WhatsApp">💬 WhatsApp</option>
+                </select>
+              </div>
+              <input 
+                type="text" 
+                value={activityData.title}
+                onChange={(e) => setActivityData({...activityData, title: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Título da atividade" 
+              />
+              <textarea 
+                value={activityData.description}
+                onChange={(e) => setActivityData({...activityData, description: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Descrição (opcional)"
+                rows={3}
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Data/Hora (opcional)</label>
+                <input 
+                  type="datetime-local" 
+                  value={activityData.scheduled_date}
+                  onChange={(e) => setActivityData({...activityData, scheduled_date: e.target.value})}
+                  className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                />
+              </div>
+              <button 
+                onClick={handleActivitySubmit}
+                className="w-full gold-gradient text-black py-3 rounded-lg font-semibold hover-glow transition-all duration-300"
+              >
+                Salvar Atividade
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Histórico de Atividades do Cliente */}
+      {showClientActivities && selectedClientForActivity && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-2xl p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white">
+                Histórico - {selectedClientForActivity.name}
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowClientActivities(false)
+                  setSelectedClientForActivity(null)
+                }}
+                className="text-gray-400 hover:text-gray-300 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {getClientActivities(selectedClientForActivity.id).length === 0 ? (
+                <p className="text-center text-gray-400">Nenhuma atividade registrada para este cliente.</p>
+              ) : (
+                getClientActivities(selectedClientForActivity.id).map((activity) => (
+                  <div key={activity.id} className="bg-gray-800 p-4 rounded-lg">
+                    <div className="flex items-start space-x-3">
+                      <span className="text-2xl">{activity.type === '📞 Ligação' ? '📞' : activity.type === '👥 Reunião' ? '👥' : activity.type === '📧 Email' ? '📧' : '💬'}</span>
+                      <div className="flex-1">
+                        <p className="font-medium text-white">{activity.title}</p>
+                        {activity.description && <p className="text-gray-400 text-sm mt-1">{activity.description}</p>}
+                        <div className="flex justify-between items-center mt-2">
+                          <div className="text-xs text-gray-500">
+                            {activity.scheduled_date && (
+                              <span>📅 {new Date(activity.scheduled_date).toLocaleString('pt-BR')}</span>
+                            )}
+                          </div>
+                          <span className={`px-2 py-1 rounded-full text-xs ${activity.completed ? 'bg-green-400/20 text-green-400' : 'bg-yellow-400/20 text-yellow-400'}`}>
+                            {activity.completed ? 'Concluída' : 'Pendente'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Confirmação de Exclusão */}
+      {showDeleteConfirm && deletingClient && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6">
+            <div className="text-center">
+              <div className="text-red-400 text-6xl mb-4">⚠️</div>
+              <h3 className="text-xl font-bold text-white mb-2">Confirmar Exclusão</h3>
+              <p className="text-gray-400 mb-6">
+                Tem certeza que deseja deletar o prospect <strong>{deletingClient.name}</strong>? 
+                Esta ação não pode ser desfeita.
+              </p>
+              <div className="flex space-x-4">
+                <button 
+                  onClick={() => {
+                    setShowDeleteConfirm(false)
+                    setDeletingClient(null)
+                  }}
+                  className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-2 rounded-lg transition"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={() => handleDeleteClient(deletingClient)}
+                  className="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg transition"
+                >
+                  Confirmar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cadastro de Oportunidade */}
+      {showOpportunityForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white">
+                Nova Oportunidade - {currentFunnel.charAt(0).toUpperCase() + currentFunnel.slice(1)}
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowOpportunityForm(false)
+                  setCurrentFunnel('')
+                  resetOpportunityForm()
+                }}
+                className="text-gray-400 hover:text-gray-300 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-4">
+              <input 
+                type="text" 
+                value={opportunityData.name}
+                onChange={(e) => setOpportunityData({...opportunityData, name: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Nome do interessado" 
+              />
+              <input 
+                type="email" 
+                value={opportunityData.email}
+                onChange={(e) => setOpportunityData({...opportunityData, email: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Email" 
+              />
+              <input 
+                type="tel" 
+                value={opportunityData.phone}
+                onChange={(e) => setOpportunityData({...opportunityData, phone: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Telefone" 
+              />
+              <input 
+                type="text" 
+                value={opportunityData.company}
+                onChange={(e) => setOpportunityData({...opportunityData, company: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Empresa (opcional)" 
+              />
+              <input 
+                type="number" 
+                value={opportunityData.value}
+                onChange={(e) => setOpportunityData({...opportunityData, value: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder={`Valor estimado da ${currentFunnel === 'eventos' ? 'participação' : 'oportunidade'}`} 
+              />
+              <textarea 
+                value={opportunityData.description}
+                onChange={(e) => setOpportunityData({...opportunityData, description: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Observações (opcional)"
+                rows={3}
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Etapa</label>
+                <select 
+                  value={opportunityData.stage}
+                  onChange={(e) => setOpportunityData({...opportunityData, stage: e.target.value})}
+                  className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                >
+                  <option value="Qualificação">Qualificação</option>
+                  <option value="1ª Reunião">1ª Reunião</option>
+                  <option value="2ª Reunião">2ª Reunião</option>
+                  <option value="Cadastro">Cadastro</option>
+                  <option value="Ativação">Ativação</option>
+                </select>
+              </div>
+              <button 
+                onClick={handleOpportunitySubmit}
+                className="w-full gold-gradient text-black py-3 rounded-lg font-semibold hover-glow transition-all duration-300"
+              >
+                Criar Oportunidade
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
           </div>
         </div>
       )}
