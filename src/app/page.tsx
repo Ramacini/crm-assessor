@@ -13,7 +13,7 @@ interface Client {
   company?: string
   aum_value?: number
   risk_profile?: string
-  status: string
+  priority: string
   pipeline_stage: string
   created_at?: string
 }
@@ -60,6 +60,10 @@ export default function Home() {
   const [rankingPeriod, setRankingPeriod] = useState('mensal')
   const [searchTerm, setSearchTerm] = useState('')
   
+  // Novos estados para funis específicos
+  const [showOpportunityForm, setShowOpportunityForm] = useState(false)
+  const [currentFunnel, setCurrentFunnel] = useState('')
+  
   // Form states
   const [authData, setAuthData] = useState({
     email: '',
@@ -75,7 +79,7 @@ export default function Home() {
     company: '',
     aum_value: '',
     risk_profile: '',
-    status: 'Prospect',
+    priority: 'Média prioridade',
     pipeline_stage: 'Qualificação'
   })
 
@@ -84,6 +88,16 @@ export default function Home() {
     title: '',
     description: '',
     scheduled_date: ''
+  })
+
+  const [opportunityData, setOpportunityData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    value: '',
+    description: '',
+    stage: 'Qualificação'
   })
 
   // Check auth status on load
@@ -257,7 +271,7 @@ export default function Home() {
             company: clientData.company,
             aum_value: clientData.aum_value ? parseFloat(clientData.aum_value) : null,
             risk_profile: clientData.risk_profile,
-            status: clientData.status,
+            priority: clientData.priority,
             pipeline_stage: clientData.pipeline_stage
           })
           .eq('id', editingClient.id)
@@ -283,7 +297,7 @@ export default function Home() {
           company: clientData.company,
           aum_value: clientData.aum_value ? parseFloat(clientData.aum_value) : null,
           risk_profile: clientData.risk_profile,
-          status: clientData.status,
+          priority: clientData.priority,
           pipeline_stage: clientData.pipeline_stage
         }
         console.log('DEBUG - Dados que serão inseridos:', insertData)
@@ -318,7 +332,7 @@ export default function Home() {
       company: client.company || '',
       aum_value: client.aum_value?.toString() || '',
       risk_profile: client.risk_profile || '',
-      status: client.status,
+      priority: client.priority,
       pipeline_stage: client.pipeline_stage
     })
     setShowClientForm(true)
@@ -428,7 +442,7 @@ export default function Home() {
       company: '',
       aum_value: '',
       risk_profile: '',
-      status: 'Prospect',
+      priority: 'Média prioridade',
       pipeline_stage: 'Qualificação'
     })
   }
@@ -440,6 +454,49 @@ export default function Home() {
       description: '',
       scheduled_date: ''
     })
+  }
+
+  const resetOpportunityForm = () => {
+    setOpportunityData({
+      name: '',
+      email: '',
+      phone: '',
+      company: '',
+      value: '',
+      description: '',
+      stage: 'Qualificação'
+    })
+  }
+
+  const handleOpportunitySubmit = async () => {
+    if (!user) return
+    
+    try {
+      const { error } = await supabase
+        .from('opportunities')
+        .insert({
+          user_id: user.id,
+          funnel_type: currentFunnel,
+          name: opportunityData.name,
+          email: opportunityData.email,
+          phone: opportunityData.phone,
+          company: opportunityData.company,
+          value: opportunityData.value ? parseFloat(opportunityData.value) : null,
+          description: opportunityData.description,
+          stage: opportunityData.stage
+        })
+      
+      if (error) {
+        alert('Erro ao criar oportunidade: ' + error.message)
+      } else {
+        alert('Oportunidade criada com sucesso!')
+        setShowOpportunityForm(false)
+        resetOpportunityForm()
+        setCurrentFunnel('')
+      }
+    } catch (err) {
+      alert('Erro ao criar oportunidade: ' + String(err))
+    }
   }
 
   const filteredClients = clients.filter(client =>
@@ -552,7 +609,7 @@ export default function Home() {
     }
 
     return {
-      ranking: sortedRanking.slice(0, 10), // Top 10
+      ranking: sortedRanking.slice(0, 3), // Top 3
       currentUserPosition,
       totalAssessors,
       performanceStatus,
@@ -661,7 +718,7 @@ export default function Home() {
               </div>
 
               <div className="text-center mb-16">
-                <h2 className="text-3xl font-bold mb-8">Mais de <span className="gold-text">1.500+ assessores</span> já confiam em nossa plataforma</h2>
+                <h2 className="text-3xl font-bold mb-8">Mais de <span className="gold-text">1.500+ assessores e consultores</span> já confiam em nossa plataforma</h2>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
                   <div className="text-center">
                     <div className="text-2xl font-bold gold-text">98%</div>
@@ -973,7 +1030,7 @@ export default function Home() {
 
             {activeTab === 'pipeline' && (
               <div>
-                <h2 className="text-2xl font-bold text-white mb-6">Pipeline de Vendas</h2>
+                <h2 className="text-2xl font-bold text-white mb-6">Pipeline de Prospecção</h2>
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
                   {['Qualificação', '1ª Reunião', '2ª Reunião', 'Cadastro', 'Ativação'].map((stage, index) => (
                     <div key={stage} className="bg-gray-900 rounded-lg border border-gray-800 p-4">
@@ -1164,7 +1221,13 @@ export default function Home() {
               <div>
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-bold text-white">Funil de Consórcio</h2>
-                  <button className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold">
+                  <button 
+                    onClick={() => {
+                      setCurrentFunnel('consorcio')
+                      setShowOpportunityForm(true)
+                    }}
+                    className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold"
+                  >
                     + Nova Oportunidade
                   </button>
                 </div>
@@ -1182,7 +1245,13 @@ export default function Home() {
               <div>
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-bold text-white">Funil de Seguros</h2>
-                  <button className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold">
+                  <button 
+                    onClick={() => {
+                      setCurrentFunnel('seguros')
+                      setShowOpportunityForm(true)
+                    }}
+                    className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold"
+                  >
                     + Nova Oportunidade
                   </button>
                 </div>
@@ -1200,7 +1269,13 @@ export default function Home() {
               <div>
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-bold text-white">Funil de Câmbio</h2>
-                  <button className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold">
+                  <button 
+                    onClick={() => {
+                      setCurrentFunnel('cambio')
+                      setShowOpportunityForm(true)
+                    }}
+                    className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold"
+                  >
                     + Nova Oportunidade
                   </button>
                 </div>
@@ -1218,7 +1293,13 @@ export default function Home() {
               <div>
                 <div className="flex justify-between items-center mb-6">
                   <h2 className="text-2xl font-bold text-white">Gestão de Eventos</h2>
-                  <button className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold">
+                  <button 
+                    onClick={() => {
+                      setCurrentFunnel('eventos')
+                      setShowOpportunityForm(true)
+                    }}
+                    className="gold-gradient text-black px-4 py-2 rounded-lg font-semibold"
+                  >
                     + Novo Evento
                   </button>
                 </div>
@@ -1335,7 +1416,7 @@ export default function Home() {
                       <div className="lg:col-span-2">
                         <div className="bg-gray-900 border border-gray-800 rounded-xl p-6">
                           <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-xl font-semibold text-white">🏆 Top 10 - Período {rankingPeriod.charAt(0).toUpperCase() + rankingPeriod.slice(1)}</h3>
+                            <h3 className="text-xl font-semibold text-white">🏆 Top 3 - Período {rankingPeriod.charAt(0).toUpperCase() + rankingPeriod.slice(1)}</h3>
                             <div className="text-sm text-gray-400">
                               Atualizado em tempo real
                             </div>
@@ -1482,15 +1563,15 @@ export default function Home() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Status</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Prioridade</label>
                 <select 
-                  value={clientData.status}
-                  onChange={(e) => setClientData({...clientData, status: e.target.value})}
+                  value={clientData.priority}
+                  onChange={(e) => setClientData({...clientData, priority: e.target.value})}
                   className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
                 >
-                  <option value="Prospect">Prospect</option>
-                  <option value="Cliente">Cliente</option>
-                  <option value="Ex-cliente">Ex-cliente</option>
+                  <option value="Baixa prioridade">Baixa prioridade</option>
+                  <option value="Média prioridade">Média prioridade</option>
+                  <option value="Alta prioridade">Alta prioridade</option>
                 </select>
               </div>
               <div>
@@ -1677,6 +1758,93 @@ export default function Home() {
                   Confirmar
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Cadastro de Oportunidade */}
+      {showOpportunityForm && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+          <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-xl font-bold text-white">
+                Nova Oportunidade - {currentFunnel.charAt(0).toUpperCase() + currentFunnel.slice(1)}
+              </h3>
+              <button 
+                onClick={() => {
+                  setShowOpportunityForm(false)
+                  setCurrentFunnel('')
+                  resetOpportunityForm()
+                }}
+                className="text-gray-400 hover:text-gray-300 text-2xl"
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-4">
+              <input 
+                type="text" 
+                value={opportunityData.name}
+                onChange={(e) => setOpportunityData({...opportunityData, name: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Nome do interessado" 
+              />
+              <input 
+                type="email" 
+                value={opportunityData.email}
+                onChange={(e) => setOpportunityData({...opportunityData, email: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Email" 
+              />
+              <input 
+                type="tel" 
+                value={opportunityData.phone}
+                onChange={(e) => setOpportunityData({...opportunityData, phone: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Telefone" 
+              />
+              <input 
+                type="text" 
+                value={opportunityData.company}
+                onChange={(e) => setOpportunityData({...opportunityData, company: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Empresa (opcional)" 
+              />
+              <input 
+                type="number" 
+                value={opportunityData.value}
+                onChange={(e) => setOpportunityData({...opportunityData, value: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder={`Valor estimado da ${currentFunnel === 'eventos' ? 'participação' : 'oportunidade'}`} 
+              />
+              <textarea 
+                value={opportunityData.description}
+                onChange={(e) => setOpportunityData({...opportunityData, description: e.target.value})}
+                className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                placeholder="Observações (opcional)"
+                rows={3}
+              />
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">Etapa</label>
+                <select 
+                  value={opportunityData.stage}
+                  onChange={(e) => setOpportunityData({...opportunityData, stage: e.target.value})}
+                  className="w-full border border-gray-700 bg-gray-800 text-white rounded-lg px-4 py-3 focus:border-yellow-400 focus:outline-none"
+                >
+                  <option value="Qualificação">Qualificação</option>
+                  <option value="1ª Reunião">1ª Reunião</option>
+                  <option value="2ª Reunião">2ª Reunião</option>
+                  <option value="Cadastro">Cadastro</option>
+                  <option value="Ativação">Ativação</option>
+                </select>
+              </div>
+              <button 
+                onClick={handleOpportunitySubmit}
+                className="w-full gold-gradient text-black py-3 rounded-lg font-semibold hover-glow transition-all duration-300"
+              >
+                Criar Oportunidade
+              </button>
             </div>
           </div>
         </div>
