@@ -621,18 +621,18 @@ export default function Home() {
 
   const plans: Plan[] = [
     {
-      name: "Starter",
-      price: "R$ 37",
+      name: "Essencial",
+      price: "R$ 47",
       features: ["Até 100 clientes", "Relatórios básicos", "Suporte por email"]
     },
     {
-      name: "Professional",
-      price: "R$ 27",
+      name: "Profissional",
+      price: "R$ 57",
       features: ["Até 500 clientes", "Relatórios avançados", "Suporte prioritário", "Integrações", "Plano anual"],
       highlight: true
     },
     {
-      name: "Enterprise",
+      name: "Escritórios",
       price: "R$ 197",
       features: ["Clientes ilimitados", "Relatórios customizados", "Suporte 24/7", "API completa"]
     }
