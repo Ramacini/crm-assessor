@@ -623,12 +623,12 @@ export default function Home() {
     {
       name: "Starter",
       price: "R$ 37",
-      features: ["Até 100 clientes", "Relatórios básicos", "Suporte por email"]
+      features: ["Até 500 clientes", "Relatórios básicos", "Suporte por email"]
     },
     {
       name: "Professional",
       price: "R$ 27",
-      features: ["Até 500 clientes", "Relatórios avançados", "Suporte prioritário", "Integrações", "Plano anual"],
+      features: ["Cliente Ilimitados", "Relatórios avançados", "Suporte prioritário", "Integrações", "Plano anual"],
       highlight: true
     },
     {
