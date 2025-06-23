@@ -4,18 +4,19 @@ import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
 import type { User } from '@supabase/supabase-js'
 
-interface Opportunity {
+interface Client {
   id: string
   user_id: string
   company_id?: string
-  funnel_type: string
   name: string
   email: string
   phone?: string
   company?: string
-  value?: number
-  description?: string
-  stage: string
+  aum_value?: number
+  priority: string
+  pipeline_stage: string
+  risk_profile?: string
+  notes?: string
   created_at: string
   user_profiles?: {
     name?: string
