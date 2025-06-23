@@ -7,6 +7,7 @@ import type { User } from '@supabase/supabase-js'
 interface Client {
   id: string
   user_id: string
+  company_id?: string
   name: string
   email: string
   phone?: string
@@ -20,6 +21,7 @@ interface Client {
 interface Activity {
   id: string
   user_id: string
+  company_id?: string
   client_id: string
   type: string
   title: string
@@ -33,6 +35,7 @@ interface Activity {
 interface Opportunity {
   id: string
   user_id: string
+  company_id?: string
   funnel_type: string
   name: string
   email: string
@@ -42,6 +45,35 @@ interface Opportunity {
   description?: string
   stage: string
   created_at: string
+}
+
+interface Company {
+  id: string
+  name: string
+  manager_id: string
+  created_at: string
+}
+
+interface UserProfile {
+  id: string
+  user_id: string
+  company_id?: string
+  role: string
+  name: string
+  email: string
+  created_at: string
+}
+
+interface TeamMember {
+  id: string
+  user_id: string
+  company_id: string
+  role: string
+  name: string
+  email: string
+  total_clients: number
+  total_aum: number
+  conversion_rate: number
 }
 
 interface Plan {
@@ -57,6 +89,11 @@ export default function CRM() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [loading, setLoading] = useState(true)
 
+  // Estados de perfil e empresa
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [userCompany, setUserCompany] = useState<Company | null>(null)
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
+
   // Estados de dados
   const [clients, setClients] = useState<Client[]>([])
   const [activities, setActivities] = useState<Activity[]>([])
@@ -67,6 +104,8 @@ export default function CRM() {
   const [showActivityModal, setShowActivityModal] = useState(false)
   const [showOpportunityModal, setShowOpportunityModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showCompanyModal, setShowCompanyModal] = useState(false)
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false)
 
   // Estados de formulários
   const [clientData, setClientData] = useState({
@@ -101,7 +140,18 @@ export default function CRM() {
   const [authData, setAuthData] = useState({
     email: '',
     password: '',
+    name: '',
+    role: 'individual'
+  })
+
+  const [companyData, setCompanyData] = useState({
     name: ''
+  })
+
+  const [memberData, setMemberData] = useState({
+    email: '',
+    name: '',
+    role: 'assessor'
   })
 
   // Estados auxiliares
@@ -116,44 +166,115 @@ export default function CRM() {
       if (session?.user) {
         setUser(session.user)
         setCurrentPage('dashboard')
+        loadUserProfile(session.user.id)
       } else {
         setUser(null)
         setCurrentPage('landing')
+        setUserProfile(null)
+        setUserCompany(null)
       }
     })
   }, [])
 
   // Carregar dados quando usuário autenticado
   useEffect(() => {
-    if (user) {
+    if (user && userProfile) {
       fetchClients()
       fetchActivities()
       fetchOpportunities()
+      if (userProfile.role === 'manager') {
+        fetchTeamMembers()
+      }
     }
-  }, [user])
+  }, [user, userProfile])
 
   const checkAuth = async () => {
     const { data: { session } } = await supabase.auth.getSession()
     if (session?.user) {
       setUser(session.user)
       setCurrentPage('dashboard')
+      await loadUserProfile(session.user.id)
     }
     setLoading(false)
+  }
+
+  const loadUserProfile = async (userId: string) => {
+    try {
+      // Buscar perfil do usuário
+      const { data: profile, error: profileError } = await supabase
+        .from('user_profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single()
+
+      if (profileError) {
+        // Se não tem perfil, criar um básico
+        const userEmail = user?.email || ''
+        const userName = user?.user_metadata?.name || userEmail.split('@')[0]
+        
+        const { data: newProfile, error: createError } = await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: userId,
+            role: 'individual',
+            name: userName,
+            email: userEmail
+          })
+          .select()
+          .single()
+
+        if (createError) throw createError
+        setUserProfile(newProfile)
+        return
+      }
+
+      setUserProfile(profile)
+
+      // Se tem empresa, buscar dados da empresa
+      if (profile.company_id) {
+        const { data: company, error: companyError } = await supabase
+          .from('companies')
+          .select('*')
+          .eq('id', profile.company_id)
+          .single()
+
+        if (!companyError && company) {
+          setUserCompany(company)
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao carregar perfil:', error)
+    }
   }
 
   // Funções de autenticação
   const handleSignUp = async () => {
     try {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: authData.email,
         password: authData.password,
         options: {
           data: {
-            name: authData.name
+            name: authData.name,
+            role: authData.role
           }
         }
       })
+      
       if (error) throw error
+      
+      // Criar perfil do usuário
+      if (data.user) {
+        await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: data.user.id,
+            role: authData.role,
+            name: authData.name,
+            email: authData.email
+          })
+      }
+      
       alert('Cadastro realizado! Verifique seu email para confirmar.')
     } catch (error: any) {
       alert('Erro no cadastro: ' + error.message)
@@ -177,15 +298,153 @@ export default function CRM() {
     setActiveTab('dashboard')
   }
 
-  // Funções de busca de dados
-  const fetchClients = async () => {
-    if (!user) return
+  // Funções de empresa
+  const handleCreateCompany = async () => {
+    if (!user || !userProfile) return
+    
+    try {
+      // Criar empresa
+      const { data: company, error: companyError } = await supabase
+        .from('companies')
+        .insert({
+          name: companyData.name,
+          manager_id: user.id
+        })
+        .select()
+        .single()
+
+      if (companyError) throw companyError
+
+      // Atualizar perfil do usuário
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .update({
+          company_id: company.id,
+          role: 'manager'
+        })
+        .eq('user_id', user.id)
+
+      if (profileError) throw profileError
+
+      setUserCompany(company)
+      setUserProfile({ ...userProfile, company_id: company.id, role: 'manager' })
+      setShowCompanyModal(false)
+      setCompanyData({ name: '' })
+      alert('Empresa criada com sucesso!')
+    } catch (error: any) {
+      alert('Erro ao criar empresa: ' + error.message)
+    }
+  }
+
+  const handleAddMember = async () => {
+    if (!userCompany || !user) return
+    
+    try {
+      // Criar convite (por enquanto vamos simular criando um usuário diretamente)
+      const tempPassword = Math.random().toString(36).slice(-8)
+      
+      const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+        email: memberData.email,
+        password: tempPassword,
+        email_confirm: true,
+        user_metadata: {
+          name: memberData.name,
+          role: memberData.role
+        }
+      })
+
+      if (authError) throw authError
+
+      // Criar perfil do membro
+      const { error: profileError } = await supabase
+        .from('user_profiles')
+        .insert({
+          user_id: authUser.user.id,
+          company_id: userCompany.id,
+          role: memberData.role,
+          name: memberData.name,
+          email: memberData.email
+        })
+
+      if (profileError) throw profileError
+
+      setShowAddMemberModal(false)
+      setMemberData({ email: '', name: '', role: 'assessor' })
+      fetchTeamMembers()
+      alert(`Membro adicionado! Senha temporária: ${tempPassword}`)
+    } catch (error: any) {
+      alert('Erro ao adicionar membro: ' + error.message)
+    }
+  }
+
+  const fetchTeamMembers = async () => {
+    if (!userCompany) return
+    
     try {
       const { data, error } = await supabase
+        .from('user_profiles')
+        .select(`
+          *,
+          clients!inner(count),
+          activities!inner(count)
+        `)
+        .eq('company_id', userCompany.id)
+        .neq('role', 'manager')
+
+      if (error) throw error
+
+      // Calcular métricas para cada membro
+      const membersWithMetrics = await Promise.all(
+        (data || []).map(async (member) => {
+          const { data: memberClients } = await supabase
+            .from('clients')
+            .select('aum_value, pipeline_stage')
+            .eq('user_id', member.user_id)
+
+          const totalClients = memberClients?.length || 0
+          const totalAUM = memberClients?.reduce((sum, client) => sum + (client.aum_value || 0), 0) || 0
+          const conversions = memberClients?.filter(c => c.pipeline_stage === 'Ativação').length || 0
+          const conversionRate = totalClients > 0 ? (conversions / totalClients) * 100 : 0
+
+          return {
+            id: member.id,
+            user_id: member.user_id,
+            company_id: member.company_id,
+            role: member.role,
+            name: member.name,
+            email: member.email,
+            total_clients: totalClients,
+            total_aum: totalAUM,
+            conversion_rate: conversionRate
+          }
+        })
+      )
+
+      setTeamMembers(membersWithMetrics)
+    } catch (error) {
+      console.error('Erro ao buscar membros:', error)
+    }
+  }
+
+  // Funções de busca de dados
+  const fetchClients = async () => {
+    if (!user || !userProfile) return
+    
+    try {
+      let query = supabase
         .from('clients')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+
+      // Se for gestor, buscar todos os clientes da empresa
+      if (userProfile.role === 'manager' && userCompany) {
+        query = supabase
+          .from('clients')
+          .select('*')
+          .eq('company_id', userCompany.id)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
       
       if (error) throw error
       setClients(data || [])
@@ -195,13 +454,23 @@ export default function CRM() {
   }
 
   const fetchActivities = async () => {
-    if (!user) return
+    if (!user || !userProfile) return
+    
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('activities')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+
+      // Se for gestor, buscar todas as atividades da empresa
+      if (userProfile.role === 'manager' && userCompany) {
+        query = supabase
+          .from('activities')
+          .select('*')
+          .eq('company_id', userCompany.id)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
       
       if (error) throw error
       setActivities(data || [])
@@ -211,13 +480,23 @@ export default function CRM() {
   }
 
   const fetchOpportunities = async () => {
-    if (!user) return
+    if (!user || !userProfile) return
+    
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('opportunities')
         .select('*')
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+
+      // Se for gestor, buscar todas as oportunidades da empresa
+      if (userProfile.role === 'manager' && userCompany) {
+        query = supabase
+          .from('opportunities')
+          .select('*')
+          .eq('company_id', userCompany.id)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
       
       if (error) throw error
       setOpportunities(data || [])
@@ -228,21 +507,25 @@ export default function CRM() {
 
   // Funções CRUD de clientes
   const handleClientSubmit = async () => {
-    if (!user) return
+    if (!user || !userProfile) return
     
     try {
+      const clientPayload = {
+        name: clientData.name,
+        email: clientData.email,
+        phone: clientData.phone,
+        company: clientData.company,
+        aum_value: clientData.aum_value ? parseFloat(clientData.aum_value) : null,
+        priority: clientData.priority,
+        pipeline_stage: clientData.pipeline_stage,
+        user_id: user.id,
+        company_id: userProfile.company_id || null
+      }
+
       if (editingClient) {
         const { error } = await supabase
           .from('clients')
-          .update({
-            name: clientData.name,
-            email: clientData.email,
-            phone: clientData.phone,
-            company: clientData.company,
-            aum_value: clientData.aum_value ? parseFloat(clientData.aum_value) : null,
-            priority: clientData.priority,
-            pipeline_stage: clientData.pipeline_stage
-          })
+          .update(clientPayload)
           .eq('id', editingClient.id)
           .eq('user_id', user.id)
         
@@ -251,16 +534,7 @@ export default function CRM() {
       } else {
         const { error } = await supabase
           .from('clients')
-          .insert({
-            user_id: user.id,
-            name: clientData.name,
-            email: clientData.email,
-            phone: clientData.phone,
-            company: clientData.company,
-            aum_value: clientData.aum_value ? parseFloat(clientData.aum_value) : null,
-            priority: clientData.priority,
-            pipeline_stage: clientData.pipeline_stage
-          })
+          .insert(clientPayload)
         
         if (error) throw error
         alert('Prospect cadastrado com sucesso!')
@@ -309,13 +583,14 @@ export default function CRM() {
 
   // Funções de atividades
   const handleActivitySubmit = async () => {
-    if (!user) return
+    if (!user || !userProfile) return
     
     try {
       const { error } = await supabase
         .from('activities')
         .insert({
           user_id: user.id,
+          company_id: userProfile.company_id || null,
           client_id: activityData.client_id,
           type: activityData.type,
           title: activityData.title,
@@ -346,13 +621,14 @@ export default function CRM() {
 
   // Funções de oportunidades
   const handleOpportunitySubmit = async () => {
-    if (!user) return
+    if (!user || !userProfile) return
     
     try {
       const { error } = await supabase
         .from('opportunities')
         .insert({
           user_id: user.id,
+          company_id: userProfile.company_id || null,
           funnel_type: opportunityData.funnel_type,
           name: opportunityData.name,
           email: opportunityData.email,
@@ -426,19 +702,19 @@ export default function CRM() {
   // Planos de preços
   const plans: Plan[] = [
     {
-      name: "Starter",
+      name: "Individual",
       price: "R$ 47",
-      features: ["Nível básico", "Pipeline essencial + atividades", "Relatórios básicos", "Suporte por email"]
+      features: ["Assessor independente", "Gestão básica de prospects", "Pipeline pessoal", "Suporte por email"]
     },
     {
-      name: "Professional", 
-      price: "R$ 37",
-      features: ["Nível avançado", "Automações + relatórios + integrações", "Relatórios avançados", "Suporte prioritário"]
+      name: "Equipe", 
+      price: "R$ 197",
+      features: ["Gestão de equipe", "Dashboard consolidado", "Ranking interno", "Múltiplos assessores", "Suporte prioritário"]
     },
     {
       name: "Enterprise",
-      price: "R$ 197",
-      features: ["Solução completa", "White label", "Integrações personalizadas", "Suporte 24/7"]
+      price: "R$ 497",
+      features: ["White label", "Múltiplas equipes", "API personalizada", "Suporte 24/7", "Consultoria especializada"]
     }
   ]
 
@@ -509,12 +785,12 @@ export default function CRM() {
               <p className="text-gray-300">Sistema completo para gerenciar prospects com campos personalizados e acompanhamento detalhado</p>
             </div>
             <div className="bg-gray-800 p-8 rounded-xl border border-yellow-500/20 shadow-xl">
-              <h3 className="text-xl font-semibold text-yellow-400 mb-4">📊 Pipeline de Prospecção</h3>
-              <p className="text-gray-300">Funil de prospecção interativo com drag & drop para acompanhar o progresso de cada prospect</p>
+              <h3 className="text-xl font-semibold text-yellow-400 mb-4">🏢 Gestão de Equipes</h3>
+              <p className="text-gray-300">Gerencie equipes completas de assessores com dashboard consolidado e ranking interno</p>
             </div>
             <div className="bg-gray-800 p-8 rounded-xl border border-yellow-500/20 shadow-xl">
-              <h3 className="text-xl font-semibold text-yellow-400 mb-4">📋 Gestão de Atividades</h3>
-              <p className="text-gray-300">Timeline de atividades com lembretes e follow-ups automáticos</p>
+              <h3 className="text-xl font-semibold text-yellow-400 mb-4">📊 Pipeline de Prospecção</h3>
+              <p className="text-gray-300">Funil de prospecção interativo com drag & drop para acompanhar o progresso de cada prospect</p>
             </div>
           </div>
         </section>
@@ -633,6 +909,14 @@ export default function CRM() {
               onChange={(e) => setAuthData({ ...authData, password: e.target.value })}
               className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500"
             />
+            <select
+              value={authData.role}
+              onChange={(e) => setAuthData({ ...authData, role: e.target.value })}
+              className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500"
+            >
+              <option value="individual">Assessor Individual</option>
+              <option value="manager">Gestor de Equipe</option>
+            </select>
             <button
               onClick={handleSignUp}
               className="w-full bg-yellow-500 hover:bg-yellow-600 text-black py-3 rounded-lg font-semibold transition duration-300"
@@ -667,9 +951,24 @@ export default function CRM() {
       {/* Header */}
       <header className="bg-gray-800 shadow-xl border-b border-yellow-500/20">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-yellow-400">CRM do Assessor</h1>
           <div className="flex items-center space-x-4">
-            <span className="text-gray-300">Olá, {user?.email}</span>
+            <h1 className="text-2xl font-bold text-yellow-400">CRM do Assessor</h1>
+            {userCompany && (
+              <span className="text-gray-300">- {userCompany.name}</span>
+            )}
+          </div>
+          <div className="flex items-center space-x-4">
+            {userProfile?.role === 'manager' && !userCompany && (
+              <button
+                onClick={() => setShowCompanyModal(true)}
+                className="bg-green-600 hover:bg-green-700 px-4 py-2 rounded-lg transition duration-300"
+              >
+                Criar Equipe
+              </button>
+            )}
+            <span className="text-gray-300">
+              {userProfile?.role === 'manager' ? '👨‍💼 Gestor' : '👤 Assessor'} - {userProfile?.name}
+            </span>
             <button
               onClick={handleSignOut}
               className="bg-red-600 hover:bg-red-700 px-4 py-2 rounded-lg transition duration-300"
@@ -686,6 +985,7 @@ export default function CRM() {
               { id: 'dashboard', label: '📊 Dashboard' },
               { id: 'clients', label: '👥 Prospects' },
               { id: 'activities', label: '📋 Atividades' },
+              ...(userProfile?.role === 'manager' ? [{ id: 'team', label: '🏢 Minha Equipe' }] : []),
               { id: 'consorcio', label: '🏠 Consórcio' },
               { id: 'seguros', label: '🛡️ Seguros' },
               { id: 'cambio', label: '💱 Câmbio' },
@@ -711,16 +1011,22 @@ export default function CRM() {
         {/* Dashboard Overview */}
         {activeTab === 'dashboard' && (
           <div>
-            <h2 className="text-3xl font-bold text-yellow-400 mb-8">Dashboard</h2>
+            <h2 className="text-3xl font-bold text-yellow-400 mb-8">
+              Dashboard {userProfile?.role === 'manager' ? '- Visão da Equipe' : ''}
+            </h2>
             
             {/* KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <div className="bg-gray-800 p-6 rounded-xl border border-yellow-500/20 shadow-lg">
-                <h3 className="text-yellow-400 text-sm font-medium">Total de Prospects</h3>
+                <h3 className="text-yellow-400 text-sm font-medium">
+                  {userProfile?.role === 'manager' ? 'Prospects da Equipe' : 'Total de Prospects'}
+                </h3>
                 <p className="text-3xl font-bold text-white">{totalProspects}</p>
               </div>
               <div className="bg-gray-800 p-6 rounded-xl border border-yellow-500/20 shadow-lg">
-                <h3 className="text-yellow-400 text-sm font-medium">AUM Total</h3>
+                <h3 className="text-yellow-400 text-sm font-medium">
+                  {userProfile?.role === 'manager' ? 'AUM da Equipe' : 'AUM Total'}
+                </h3>
                 <p className="text-3xl font-bold text-white">R$ {totalAUM.toLocaleString()}</p>
               </div>
               <div className="bg-gray-800 p-6 rounded-xl border border-yellow-500/20 shadow-lg">
@@ -728,13 +1034,17 @@ export default function CRM() {
                 <p className="text-3xl font-bold text-white">{conversionRate}%</p>
               </div>
               <div className="bg-gray-800 p-6 rounded-xl border border-yellow-500/20 shadow-lg">
-                <h3 className="text-yellow-400 text-sm font-medium">Atividades Pendentes</h3>
-                <p className="text-3xl font-bold text-white">{pendingActivities}</p>
+                <h3 className="text-yellow-400 text-sm font-medium">
+                  {userProfile?.role === 'manager' ? 'Assessores' : 'Atividades Pendentes'}
+                </h3>
+                <p className="text-3xl font-bold text-white">
+                  {userProfile?.role === 'manager' ? teamMembers.length : pendingActivities}
+                </p>
               </div>
             </div>
 
             {/* Pipeline por Etapa */}
-            <div className="bg-gray-800 p-6 rounded-xl border border-yellow-500/20 shadow-lg">
+            <div className="bg-gray-800 p-6 rounded-xl border border-yellow-500/20 shadow-lg mb-8">
               <h3 className="text-xl font-semibold text-yellow-400 mb-6">Pipeline por Etapa</h3>
               <div className="grid grid-cols-5 gap-4">
                 {stages.map((stage) => {
@@ -750,6 +1060,100 @@ export default function CRM() {
                 })}
               </div>
             </div>
+
+            {/* Ranking da Equipe (se for gestor) */}
+            {userProfile?.role === 'manager' && teamMembers.length > 0 && (
+              <div className="bg-gray-800 p-6 rounded-xl border border-yellow-500/20 shadow-lg">
+                <h3 className="text-xl font-semibold text-yellow-400 mb-6">Ranking da Equipe</h3>
+                <div className="space-y-4">
+                  {teamMembers
+                    .sort((a, b) => b.total_aum - a.total_aum)
+                    .map((member, index) => (
+                      <div key={member.id} className="flex items-center justify-between bg-gray-700 p-4 rounded-lg">
+                        <div className="flex items-center space-x-4">
+                          <div className="text-2xl">
+                            {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-white">{member.name}</h4>
+                            <p className="text-gray-400">{member.email}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-yellow-400 font-bold">R$ {member.total_aum.toLocaleString()}</div>
+                          <div className="text-gray-400 text-sm">
+                            {member.total_clients} prospects • {member.conversion_rate.toFixed(1)}% conversão
+                          </div>
+                        </div>
+                      </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Minha Equipe (só para gestores) */}
+        {activeTab === 'team' && userProfile?.role === 'manager' && (
+          <div>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-3xl font-bold text-yellow-400">Minha Equipe - {userCompany?.name}</h2>
+              <button
+                onClick={() => setShowAddMemberModal(true)}
+                className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-lg font-semibold transition duration-300 shadow-lg"
+              >
+                + Adicionar Assessor
+              </button>
+            </div>
+
+            {teamMembers.length === 0 ? (
+              <div className="bg-gray-800 p-8 rounded-xl border border-yellow-500/20 shadow-lg text-center">
+                <p className="text-gray-400 mb-4">Sua equipe ainda não tem assessores.</p>
+                <button
+                  onClick={() => setShowAddMemberModal(true)}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-lg font-semibold transition duration-300"
+                >
+                  Adicionar Primeiro Assessor
+                </button>
+              </div>
+            ) : (
+              <div className="bg-gray-800 rounded-xl border border-yellow-500/20 shadow-lg overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-700">
+                      <tr>
+                        <th className="px-6 py-4 text-left text-yellow-400 font-semibold">Assessor</th>
+                        <th className="px-6 py-4 text-left text-yellow-400 font-semibold">Email</th>
+                        <th className="px-6 py-4 text-left text-yellow-400 font-semibold">Prospects</th>
+                        <th className="px-6 py-4 text-left text-yellow-400 font-semibold">AUM Total</th>
+                        <th className="px-6 py-4 text-left text-yellow-400 font-semibold">Conversão</th>
+                        <th className="px-6 py-4 text-left text-yellow-400 font-semibold">Posição</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {teamMembers
+                        .sort((a, b) => b.total_aum - a.total_aum)
+                        .map((member, index) => (
+                          <tr key={member.id} className="border-t border-gray-700 hover:bg-gray-700/50">
+                            <td className="px-6 py-4 text-white font-medium">{member.name}</td>
+                            <td className="px-6 py-4 text-gray-300">{member.email}</td>
+                            <td className="px-6 py-4 text-gray-300">{member.total_clients}</td>
+                            <td className="px-6 py-4 text-yellow-400 font-semibold">
+                              R$ {member.total_aum.toLocaleString()}
+                            </td>
+                            <td className="px-6 py-4 text-gray-300">{member.conversion_rate.toFixed(1)}%</td>
+                            <td className="px-6 py-4">
+                              <span className="text-2xl">
+                                {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `#${index + 1}`}
+                              </span>
+                            </td>
+                          </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -757,7 +1161,9 @@ export default function CRM() {
         {activeTab === 'clients' && (
           <div>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-yellow-400">Prospects</h2>
+              <h2 className="text-3xl font-bold text-yellow-400">
+                Prospects {userProfile?.role === 'manager' ? '- Visão da Equipe' : ''}
+              </h2>
               <button
                 onClick={() => setShowClientModal(true)}
                 className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-lg font-semibold transition duration-300 shadow-lg"
@@ -788,7 +1194,9 @@ export default function CRM() {
                       <th className="px-6 py-4 text-left text-yellow-400 font-semibold">Prioridade</th>
                       <th className="px-6 py-4 text-left text-yellow-400 font-semibold">Etapa</th>
                       <th className="px-6 py-4 text-left text-yellow-400 font-semibold">AUM</th>
-                      <th className="px-6 py-4 text-left text-yellow-400 font-semibold">Ações</th>
+                      {userProfile?.role !== 'manager' && (
+                        <th className="px-6 py-4 text-left text-yellow-400 font-semibold">Ações</th>
+                      )}
                     </tr>
                   </thead>
                   <tbody>
@@ -816,37 +1224,39 @@ export default function CRM() {
                           <td className="px-6 py-4 text-gray-300">
                             {client.aum_value ? `R$ ${client.aum_value.toLocaleString()}` : '-'}
                           </td>
-                          <td className="px-6 py-4">
-                            <div className="flex space-x-2">
-                              <button
-                                onClick={() => {
-                                  setEditingClient(client)
-                                  setClientData({
-                                    name: client.name,
-                                    email: client.email,
-                                    phone: client.phone || '',
-                                    company: client.company || '',
-                                    aum_value: client.aum_value?.toString() || '',
-                                    priority: client.priority,
-                                    pipeline_stage: client.pipeline_stage
-                                  })
-                                  setShowClientModal(true)
-                                }}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition duration-300"
-                              >
-                                Editar
-                              </button>
-                              <button
-                                onClick={() => {
-                                  setClientToDelete(client)
-                                  setShowDeleteModal(true)
-                                }}
-                                className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition duration-300"
-                              >
-                                Excluir
-                              </button>
-                            </div>
-                          </td>
+                          {userProfile?.role !== 'manager' && (
+                            <td className="px-6 py-4">
+                              <div className="flex space-x-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingClient(client)
+                                    setClientData({
+                                      name: client.name,
+                                      email: client.email,
+                                      phone: client.phone || '',
+                                      company: client.company || '',
+                                      aum_value: client.aum_value?.toString() || '',
+                                      priority: client.priority,
+                                      pipeline_stage: client.pipeline_stage
+                                    })
+                                    setShowClientModal(true)
+                                  }}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm transition duration-300"
+                                >
+                                  Editar
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setClientToDelete(client)
+                                    setShowDeleteModal(true)
+                                  }}
+                                  className="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm transition duration-300"
+                                >
+                                  Excluir
+                                </button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       ))
                     )}
@@ -861,13 +1271,17 @@ export default function CRM() {
         {activeTab === 'activities' && (
           <div>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-yellow-400">Atividades</h2>
-              <button
-                onClick={() => setShowActivityModal(true)}
-                className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-lg font-semibold transition duration-300 shadow-lg"
-              >
-                + Nova Atividade
-              </button>
+              <h2 className="text-3xl font-bold text-yellow-400">
+                Atividades {userProfile?.role === 'manager' ? '- Visão da Equipe' : ''}
+              </h2>
+              {userProfile?.role !== 'manager' && (
+                <button
+                  onClick={() => setShowActivityModal(true)}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-lg font-semibold transition duration-300 shadow-lg"
+                >
+                  + Nova Atividade
+                </button>
+              )}
             </div>
 
             <div className="bg-gray-800 rounded-xl border border-yellow-500/20 shadow-lg p-6">
@@ -905,16 +1319,20 @@ export default function CRM() {
         {['consorcio', 'seguros', 'cambio', 'eventos'].includes(activeTab) && (
           <div>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-yellow-400 capitalize">{activeTab}</h2>
-              <button
-                onClick={() => {
-                  setOpportunityData({ ...opportunityData, funnel_type: activeTab })
-                  setShowOpportunityModal(true)
-                }}
-                className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-lg font-semibold transition duration-300 shadow-lg"
-              >
-                + Nova Oportunidade
-              </button>
+              <h2 className="text-3xl font-bold text-yellow-400 capitalize">
+                {activeTab} {userProfile?.role === 'manager' ? '- Visão da Equipe' : ''}
+              </h2>
+              {userProfile?.role !== 'manager' && (
+                <button
+                  onClick={() => {
+                    setOpportunityData({ ...opportunityData, funnel_type: activeTab })
+                    setShowOpportunityModal(true)
+                  }}
+                  className="bg-yellow-500 hover:bg-yellow-600 text-black px-6 py-3 rounded-lg font-semibold transition duration-300 shadow-lg"
+                >
+                  + Nova Oportunidade
+                </button>
+              )}
             </div>
 
             {/* Pipeline Visual */}
@@ -941,32 +1359,34 @@ export default function CRM() {
                                 R$ {opp.value.toLocaleString()}
                               </p>
                             )}
-                            <div className="flex justify-between mt-2">
-                              {stage !== 'Qualificação' && (
-                                <button
-                                  onClick={() => {
-                                    const currentIndex = stages.indexOf(stage)
-                                    const previousStage = stages[currentIndex - 1]
-                                    moveOpportunity(opp.id, previousStage)
-                                  }}
-                                  className="text-yellow-400 hover:text-yellow-300 text-xs"
-                                >
-                                  ←
-                                </button>
-                              )}
-                              {stage !== 'Ativação' && (
-                                <button
-                                  onClick={() => {
-                                    const currentIndex = stages.indexOf(stage)
-                                    const nextStage = stages[currentIndex + 1]
-                                    moveOpportunity(opp.id, nextStage)
-                                  }}
-                                  className="text-yellow-400 hover:text-yellow-300 text-xs"
-                                >
-                                  →
-                                </button>
-                              )}
-                            </div>
+                            {userProfile?.role !== 'manager' && (
+                              <div className="flex justify-between mt-2">
+                                {stage !== 'Qualificação' && (
+                                  <button
+                                    onClick={() => {
+                                      const currentIndex = stages.indexOf(stage)
+                                      const previousStage = stages[currentIndex - 1]
+                                      moveOpportunity(opp.id, previousStage)
+                                    }}
+                                    className="text-yellow-400 hover:text-yellow-300 text-xs"
+                                  >
+                                    ←
+                                  </button>
+                                )}
+                                {stage !== 'Ativação' && (
+                                  <button
+                                    onClick={() => {
+                                      const currentIndex = stages.indexOf(stage)
+                                      const nextStage = stages[currentIndex + 1]
+                                      moveOpportunity(opp.id, nextStage)
+                                    }}
+                                    className="text-yellow-400 hover:text-yellow-300 text-xs"
+                                  >
+                                    →
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -978,6 +1398,103 @@ export default function CRM() {
           </div>
         )}
       </div>
+
+      {/* Modal de Criar Empresa */}
+      {showCompanyModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-8 rounded-xl w-full max-w-md border border-yellow-500/20 shadow-2xl">
+            <h3 className="text-2xl font-bold text-yellow-400 mb-6">Criar Equipe/Escritório</h3>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-gray-300 mb-2">Nome da Empresa/Escritório</label>
+                <input
+                  type="text"
+                  value={companyData.name}
+                  onChange={(e) => setCompanyData({ ...companyData, name: e.target.value })}
+                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500"
+                  placeholder="Ex: Esparta Investimentos"
+                />
+              </div>
+            </div>
+            
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => setShowCompanyModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-300"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCreateCompany}
+                className="flex-1 px-4 py-2 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition duration-300 font-semibold"
+              >
+                Criar Equipe
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Adicionar Membro */}
+      {showAddMemberModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 p-8 rounded-xl w-full max-w-md border border-yellow-500/20 shadow-2xl">
+            <h3 className="text-2xl font-bold text-yellow-400 mb-6">Adicionar Assessor à Equipe</h3>
+            
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-gray-300 mb-2">Nome do Assessor</label>
+                <input
+                  type="text"
+                  value={memberData.name}
+                  onChange={(e) => setMemberData({ ...memberData, name: e.target.value })}
+                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500"
+                  placeholder="Nome completo"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-300 mb-2">Email</label>
+                <input
+                  type="email"
+                  value={memberData.email}
+                  onChange={(e) => setMemberData({ ...memberData, email: e.target.value })}
+                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500"
+                  placeholder="email@empresa.com"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-gray-300 mb-2">Cargo</label>
+                <select
+                  value={memberData.role}
+                  onChange={(e) => setMemberData({ ...memberData, role: e.target.value })}
+                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500"
+                >
+                  <option value="assessor">Assessor</option>
+                  <option value="senior_assessor">Assessor Sênior</option>
+                </select>
+              </div>
+            </div>
+            
+            <div className="flex space-x-3 mt-6">
+              <button
+                onClick={() => setShowAddMemberModal(false)}
+                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition duration-300"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleAddMember}
+                className="flex-1 px-4 py-2 bg-yellow-500 text-black rounded-lg hover:bg-yellow-600 transition duration-300 font-semibold"
+              >
+                Adicionar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Prospect */}
       {showClientModal && (
