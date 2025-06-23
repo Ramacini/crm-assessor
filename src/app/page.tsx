@@ -58,6 +58,9 @@ interface Opportunity {
   description?: string
   stage: string
   created_at: string
+user_profiles?: {
+    name?: string
+    email: string
 }
 
 interface Company {
