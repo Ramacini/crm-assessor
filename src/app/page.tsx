@@ -741,8 +741,8 @@ export default function Home() {
 
               <div className="bg-gradient-to-r from-yellow-400/10 to-orange-500/10 border border-yellow-400/30 rounded-2xl p-8 mb-16">
                 <div className="text-center">
-                  <h2 className="text-3xl font-bold mb-4">🔥 Oferta Especial - 50% OFF</h2>
-                  <p className="text-xl mb-6">Primeiros 3 meses com desconto exclusivo</p>
+                  <h2 className="text-3xl font-bold mb-4">🚀 Oferta Especial</h2>
+<p className="text-xl mb-6">Comece hoje e transforme sua gestão</p>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     {plans.map((plan, index) => (
                       <div key={index} className={`bg-gray-900 p-6 rounded-xl border-2 ${plan.highlight ? 'border-yellow-400' : 'border-gray-800'}`}>
