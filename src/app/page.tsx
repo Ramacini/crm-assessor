@@ -911,13 +911,13 @@ export default function CRM() {
     const totalTeamClients = clients.length
     const totalTeamActivities = activities.length
     const totalTeamAUM = clients.reduce((sum, client) => sum + (client.aum_value || 0), 0)
-    const teamMembers = teamMembers.length
+    const teamMembersCount = teamMembers.length
 
     return {
       totalTeamClients,
       totalTeamActivities,
       totalTeamAUM,
-      teamMembers
+      teamMembers: teamMembersCount
     }
   }
 
