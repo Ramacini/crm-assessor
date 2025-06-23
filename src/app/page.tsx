@@ -18,6 +18,10 @@ interface Client {
   risk_profile?: string
   notes?: string
   created_at: string
+  user_profiles?: {
+    name?: string
+    email: string
+  }
 }
 
 interface Activity {
@@ -32,6 +36,13 @@ interface Activity {
   scheduled_date?: string
   completed_date?: string
   created_at: string
+  clients?: {
+    name: string
+  }
+  user_profiles?: {
+    name?: string
+    email: string
+  }
 }
 
 interface Opportunity {
