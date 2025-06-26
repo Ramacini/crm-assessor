@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
-import type { User } from '@supabase/supabase-js'
+import type { User as SupabaseUser } from '@supabase/supabase-js'
 
-interface User {
+interface CRMUser {
   id: string
   email: string
   name: string
@@ -87,7 +87,7 @@ interface TeamMember {
 
 export default function CRMAssessor() {
   // Authentication states
-  const [user, setUser] = useState<User | null>(null)
+  const [user, setUser] = useState<CRMUser | null>(null)
   const [userCompany, setUserCompany] = useState<Company | null>(null)
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([])
   const [loading, setLoading] = useState(true)
@@ -208,12 +208,12 @@ export default function CRMAssessor() {
   }
 
   // Local storage functions
-  const saveUserData = (userData: User) => {
+  const saveUserData = (userData: CRMUser) => {
     localStorage.setItem(`crm-user-${userData.id}`, JSON.stringify(userData))
     
     // Also save in global users list
     const users = JSON.parse(localStorage.getItem('crm-users') || '[]')
-    const existingIndex = users.findIndex((u: User) => u.id === userData.id)
+    const existingIndex = users.findIndex((u: CRMUser) => u.id === userData.id)
     if (existingIndex >= 0) {
       users[existingIndex] = userData
     } else {
@@ -222,7 +222,7 @@ export default function CRMAssessor() {
     localStorage.setItem('crm-users', JSON.stringify(users))
   }
 
-  const loadUserData = (userId: string): User | null => {
+  const loadUserData = (userId: string): CRMUser | null => {
     const userData = localStorage.getItem(`crm-user-${userId}`)
     if (userData) {
       const parsedUser = JSON.parse(userData)
@@ -232,7 +232,7 @@ export default function CRMAssessor() {
     return null
   }
 
-  const loadLinkedData = (userData: User) => {
+  const loadLinkedData = (userData: CRMUser) => {
     try {
       // Load company if user has one
       if (userData.company_id) {
@@ -276,9 +276,9 @@ export default function CRMAssessor() {
   const loadTeamMembers = (companyId: string) => {
     try {
       const users = JSON.parse(localStorage.getItem('crm-users') || '[]')
-      const members = users.filter((u: User) => u.company_id === companyId && u.role === 'assessor')
+      const members = users.filter((u: CRMUser) => u.company_id === companyId && u.role === 'assessor')
       
-      const membersWithStats = members.map((member: User) => {
+      const membersWithStats = members.map((member: CRMUser) => {
         const memberProspects = JSON.parse(localStorage.getItem(`crm-prospects-${member.id}`) || '[]')
         const conversions = memberProspects.filter((p: Prospect) => p.pipeline_stage === 'Ativação').length
         const score = memberProspects.length * 10 + conversions * 50
