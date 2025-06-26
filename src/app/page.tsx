@@ -1330,162 +1330,163 @@ export default function CRMAssessor() {
                 </div>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Pipeline Tab */}
-          {activeTab === 'pipeline' && (
-            <div className="space-y-6">
-              <h2 className="text-3xl font-bold" style={{color: brandColors.primary}}>
-                Pipeline de Prospecção {user?.role === 'admin' ? '(Toda a Equipe)' : ''}
-              </h2>
-              
-              <div className="grid md:grid-cols-5 gap-4">
-                {pipelineStages.map(stage => {
-                  const stageProspects = userProspects.filter(p => p.pipeline_stage === stage)
-                  return (
-                    <div key={stage} className="bg-gray-900 p-4 rounded-lg">
-                      <h3 className="font-semibold text-white mb-4">{stage} ({stageProspects.length})</h3>
-                      <div className="space-y-3">
-                        {stageProspects.map(prospect => {
-                          const prospectOwner = user?.role === 'admin' ? 
-                            teamMembers.find(m => m.id === prospect.user_id) : null
-                          
-                          return (
-                            <div key={prospect.id} className="bg-gray-800 p-3 rounded-md">
-                              <h4 className="font-semibold text-white text-sm">{prospect.name}</h4>
-                              <p className="text-gray-400 text-xs">{prospect.email}</p>
-                              {prospectOwner && (
-                                <p className="text-blue-400 text-xs">👤 {prospectOwner.name}</p>
-                              )}
-                              {prospect.aum_value && (
-                                <p className="text-green-400 text-xs">R$ {prospect.aum_value.toLocaleString()}</p>
-                              )}
-                              {(prospect.user_id === user?.id || user?.role === 'admin') && (
-                                <div className="mt-2 flex flex-wrap gap-1">
-                                  {pipelineStages.map(targetStage => (
-                                    targetStage !== stage && (
-                                      <button
-                                        key={targetStage}
-                                        onClick={() => handlePipelineMove(prospect.id, targetStage)}
-                                        className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-500 transition-colors"
-                                        title={`Mover para ${targetStage}`}
-                                      >
-                                        →
-                                      </button>
-                                    )
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Funnel Tabs */}
-          {(['consorcio', 'seguros', 'cambio', 'eventos'].includes(activeTab)) && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold" style={{color: brandColors.primary}}>
-                  {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-                </h2>
-                <button
-                  onClick={() => {
-                    setCurrentFunnelType(activeTab)
-                    setShowOpportunityModal(true)
-                  }}
-                  className="px-6 py-2 rounded-lg font-semibold"
-                  style={{backgroundColor: brandColors.primary, color: 'black'}}
-                >
-                  + Nova Oportunidade
-                </button>
-              </div>
-
-              <div className="bg-gray-800 p-6 rounded-lg">
-                <h3 className="text-lg font-semibold mb-4">Oportunidades em {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h3>
-                <div className="space-y-3">
-                  {opportunities
-                    .filter(o => o.funnel_type === activeTab)
-                    .map(opportunity => (
-                    <div key={opportunity.id} className="bg-gray-700 p-4 rounded-lg">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h4 className="font-semibold">{opportunity.name}</h4>
-                          <p className="text-gray-400 text-sm">{opportunity.email}</p>
-                          {opportunity.value && (
-                            <p className="text-green-400 text-sm">R$ {opportunity.value.toLocaleString()}</p>
-                          )}
-                        </div>
-                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-600 text-white">
-                          {opportunity.stage}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Ranking Tab */}
-          {activeTab === 'ranking' && (
-            <div className="space-y-6">
-              <h2 className="text-3xl font-bold" style={{color: brandColors.primary}}>
-                🏆 Ranking de Performance
-              </h2>
-              
-              {(() => {
-                const rankingData = generateRanking()
+        {/* Pipeline Tab */}
+        {activeTab === 'pipeline' && (
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold" style={{color: brandColors.primary}}>
+              Pipeline de Prospecção {user?.role === 'admin' ? '(Toda a Equipe)' : ''}
+            </h2>
+            
+            <div className="grid md:grid-cols-5 gap-4">
+              {pipelineStages.map(stage => {
+                const stageProspects = userProspects.filter(p => p.pipeline_stage === stage)
                 return (
-                  <div className="grid md:grid-cols-2 gap-6">
-                    {/* User Position */}
-                    <div className="bg-gray-800 p-6 rounded-lg">
-                      <h3 className="text-lg font-semibold mb-4">Sua Posição</h3>
-                      <div className="text-center">
-                        <p className="text-4xl font-bold mb-2" style={{color: brandColors.primary}}>
-                          #{rankingData.userPosition}
-                        </p>
-                        <p className="text-gray-300">de {rankingData.totalUsers} assessores</p>
-                        <p className="text-sm text-gray-400 mt-2">
-                          Score: {rankingData.userScore} pontos
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Top Ranking */}
-                    <div className="bg-gray-800 p-6 rounded-lg">
-                      <h3 className="text-lg font-semibold mb-4">Top Performers</h3>
-                      <div className="space-y-3">
-                        {rankingData.ranking.map((user, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
-                            <div className="flex items-center space-x-3">
-                              <span className={`
-                                w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
-                                ${index === 0 ? 'bg-yellow-400 text-black' : 
-                                  index === 1 ? 'bg-gray-400 text-black' : 
-                                  'bg-yellow-600 text-white'}
-                              `}>
-                                {index + 1}
-                              </span>
-                              <span className="font-medium">{user.name}</span>
-                            </div>
-                            <span className="font-bold" style={{color: brandColors.primary}}>
-                              {user.score}
-                            </span>
+                  <div key={stage} className="bg-gray-900 p-4 rounded-lg">
+                    <h3 className="font-semibold text-white mb-4">{stage} ({stageProspects.length})</h3>
+                    <div className="space-y-3">
+                      {stageProspects.map(prospect => {
+                        const prospectOwner = user?.role === 'admin' ? 
+                          teamMembers.find(m => m.id === prospect.user_id) : null
+                        
+                        return (
+                          <div key={prospect.id} className="bg-gray-800 p-3 rounded-md">
+                            <h4 className="font-semibold text-white text-sm">{prospect.name}</h4>
+                            <p className="text-gray-400 text-xs">{prospect.email}</p>
+                            {prospectOwner && (
+                              <p className="text-blue-400 text-xs">👤 {prospectOwner.name}</p>
+                            )}
+                            {prospect.aum_value && (
+                              <p className="text-green-400 text-xs">R$ {prospect.aum_value.toLocaleString()}</p>
+                            )}
+                            {(prospect.user_id === user?.id || user?.role === 'admin') && (
+                              <div className="mt-2 flex flex-wrap gap-1">
+                                {pipelineStages.map(targetStage => (
+                                  targetStage !== stage && (
+                                    <button
+                                      key={targetStage}
+                                      onClick={() => handlePipelineMove(prospect.id, targetStage)}
+                                      className="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-500 transition-colors"
+                                      title={`Mover para ${targetStage}`}
+                                    >
+                                      →
+                                    </button>
+                                  )
+                                ))}
+                              </div>
+                            )}
                           </div>
-                        ))}
-                      </div>
+                        )
+                      })}
                     </div>
                   </div>
                 )
-              })()}
+              })}
             </div>
-          )}
+          </div>
+        )}
+
+        {/* Funnel Tabs */}
+        {(['consorcio', 'seguros', 'cambio', 'eventos'].includes(activeTab)) && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-3xl font-bold" style={{color: brandColors.primary}}>
+                {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+              </h2>
+              <button
+                onClick={() => {
+                  setCurrentFunnelType(activeTab)
+                  setShowOpportunityModal(true)
+                }}
+                className="px-6 py-2 rounded-lg font-semibold"
+                style={{backgroundColor: brandColors.primary, color: 'black'}}
+              >
+                + Nova Oportunidade
+              </button>
+            </div>
+
+            <div className="bg-gray-800 p-6 rounded-lg">
+              <h3 className="text-lg font-semibold mb-4">Oportunidades em {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</h3>
+              <div className="space-y-3">
+                {opportunities
+                  .filter(o => o.funnel_type === activeTab)
+                  .map(opportunity => (
+                  <div key={opportunity.id} className="bg-gray-700 p-4 rounded-lg">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h4 className="font-semibold">{opportunity.name}</h4>
+                        <p className="text-gray-400 text-sm">{opportunity.email}</p>
+                        {opportunity.value && (
+                          <p className="text-green-400 text-sm">R$ {opportunity.value.toLocaleString()}</p>
+                        )}
+                      </div>
+                      <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-600 text-white">
+                        {opportunity.stage}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Ranking Tab */}
+        {activeTab === 'ranking' && (
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold" style={{color: brandColors.primary}}>
+              🏆 Ranking de Performance
+            </h2>
+            
+            {(() => {
+              const rankingData = generateRanking()
+              return (
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* User Position */}
+                  <div className="bg-gray-800 p-6 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4">Sua Posição</h3>
+                    <div className="text-center">
+                      <p className="text-4xl font-bold mb-2" style={{color: brandColors.primary}}>
+                        #{rankingData.userPosition}
+                      </p>
+                      <p className="text-gray-300">de {rankingData.totalUsers} assessores</p>
+                      <p className="text-sm text-gray-400 mt-2">
+                        Score: {rankingData.userScore} pontos
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Top Ranking */}
+                  <div className="bg-gray-800 p-6 rounded-lg">
+                    <h3 className="text-lg font-semibold mb-4">Top Performers</h3>
+                    <div className="space-y-3">
+                      {rankingData.ranking.map((user, index) => (
+                        <div key={index} className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+                          <div className="flex items-center space-x-3">
+                            <span className={`
+                              w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm
+                              ${index === 0 ? 'bg-yellow-400 text-black' : 
+                                index === 1 ? 'bg-gray-400 text-black' : 
+                                'bg-yellow-600 text-white'}
+                            `}>
+                              {index + 1}
+                            </span>
+                            <span className="font-medium">{user.name}</span>
+                          </div>
+                          <span className="font-bold" style={{color: brandColors.primary}}>
+                            {user.score}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )
+            })()}
+          </div>
+        )}
       </main>
 
       {/* Modals */}
