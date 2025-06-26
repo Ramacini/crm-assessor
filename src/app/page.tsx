@@ -184,7 +184,7 @@ export default function CRMAssessor() {
           setCurrentPage('dashboard')
         } else {
           // Create user data if doesn't exist
-          const newUserData: User = {
+          const newUserData: CRMUser = {
             id: authUser.id,
             email: authUser.email || '',
             name: authUser.user_metadata?.name || authUser.email || '',
